@@ -1,0 +1,23 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TulipMark from '../components/TulipMark.astro';
+---
+
+<BaseLayout title="迷路了" description="这条小巷里没有你要找的页面。">
+  <section class="container-page not-found">
+    <div class="not-found-card glass">
+      <span class="not-found-mark" aria-hidden="true">
+        <TulipMark class="h-10 w-10" />
+      </span>
+      <p class="not-found-code">404</p>
+      <h1>走到一条没有灯的小巷</h1>
+      <p>这里没有你要找的页面。也许晚风把它吹去了别处。</p>
+      <a class="primary-btn" href="/">
+        回到巷口
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </a>
+    </div>
+  </section>
+</BaseLayout>

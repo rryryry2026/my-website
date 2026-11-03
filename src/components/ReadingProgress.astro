@@ -1,0 +1,39 @@
+---
+// 阅读进度条：跟随文章滚动，不参与布局
+---
+
+<div class="reading-progress" aria-hidden="true">
+  <span data-reading-progress></span>
+</div>
+
+<script>
+  const bar = document.querySelector<HTMLElement>('[data-reading-progress]');
+  const article = document.querySelector<HTMLElement>('[data-article]');
+
+  if (bar && article) {
+    let ticking = false;
+
+    const update = () => {
+      const rect = article.getBoundingClientRect();
+      const start = window.scrollY + rect.top;
+      const distance = Math.max(article.offsetHeight - window.innerHeight * 0.65, 1);
+      const progress = Math.min(Math.max((window.scrollY - start + 100) / distance, 0), 1);
+      bar.style.transform = `scaleX(${progress})`;
+      ticking = false;
+    };
+
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(update);
+        }
+      },
+      { passive: true }
+    );
+
+    window.addEventListener('resize', update);
+    update();
+  }
+</script>

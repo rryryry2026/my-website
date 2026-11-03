@@ -1,0 +1,36 @@
+---
+import type { Post } from '../lib/posts';
+import { formatDate, getPostSlug, getReadingTime } from '../lib/posts';
+
+interface Props {
+  post: Post;
+  index?: number;
+}
+
+const { post, index = 0 } = Astro.props;
+const minutes = getReadingTime(post.body ?? '');
+const number = String(index + 1).padStart(2, '0');
+---
+
+<article class="post-card-wrap">
+  <a class="post-card" href={`/blog/${getPostSlug(post)}/`}>
+    <span class="post-card-index" aria-hidden="true">{number}</span>
+
+    <div class="post-card-meta">
+      <span class="category-chip">{post.data.category}</span>
+      <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+    </div>
+
+    <h3 class="post-card-title">{post.data.title}</h3>
+    <p class="post-card-desc">{post.data.description}</p>
+
+    <div class="post-card-footer">
+      <span>约 {minutes} 分钟阅读</span>
+      <span class="post-card-arrow" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="M4 16 16 4M7 4h9v9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+    </div>
+  </a>
+</article>

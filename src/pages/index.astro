@@ -1,0 +1,172 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+import TulipMark from '../components/TulipMark.astro';
+import { site } from '../config';
+import { getPublishedPosts, getYear } from '../lib/posts';
+
+const posts = getPublishedPosts(await getCollection('blog'));
+const latestPosts = posts.slice(0, 3);
+const year = getYear();
+
+const gallery = [
+  {
+    src: '/assets/gallery/frame-1.jpg',
+    alt: '暮色中的旧巷与亮起灯的小屋',
+    title: '巷口的灯',
+    note: '18:42 · 归家之前',
+  },
+  {
+    src: '/assets/gallery/frame-2.jpg',
+    alt: '坐在屋檐墙头看晚霞的少女',
+    title: '墙头晚风',
+    note: '夏日 · 晴',
+  },
+  {
+    src: '/assets/gallery/frame-3.jpg',
+    alt: '橙红色晚霞下安静的屋檐',
+    title: '落日余温',
+    note: '某一天 · 黄昏',
+  },
+];
+---
+
+<BaseLayout>
+  <section class="home-hero">
+    <div class="container-page hero-grid">
+      <div class="hero-content">
+        <p class="eyebrow hero-eyebrow">TULIP LANE · 黄昏来信</p>
+
+        <div class="hero-title-wrap">
+          <p class="hero-pretitle">我的</p>
+          <h1 class="hero-title">
+            郁金香<span class="hero-title-accent">小姐</span>
+          </h1>
+          <p class="hero-title-en">MY TULIP LADY</p>
+        </div>
+
+        <p class="hero-lead">
+          在屋顶与晚霞之间，<br />
+          风把一天的故事吹得很慢。
+        </p>
+
+        <div class="hero-intro glass">
+          <span class="hero-seal" aria-hidden="true">
+            <TulipMark class="h-7 w-7" />
+          </span>
+          <div>
+            <p class="hero-intro-kicker">HELLO，我是{site.author}</p>
+            <p class="hero-intro-text">{site.intro}</p>
+            <p class="hero-intro-meta">
+              <span>{site.location}</span>
+              <span class="meta-dot"></span>
+              <span>{site.role}</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <a class="primary-btn" href="/blog/">
+            去读几封信
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+          <a class="text-link" href="/about/">关于这个角落 <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+
+      <aside class="hero-aside" aria-label="黄昏手记">
+        <div class="hero-postcard">
+          <p class="postcard-stamp">晚巷来信 · NO. 07</p>
+          <blockquote class="postcard-quote">
+            晚霞落在瓦片上，<br />
+            像一封没有署名的信。
+          </blockquote>
+          <div class="postcard-divider"></div>
+          <p class="postcard-note">
+            写给肖艾，<br />
+            也写给每一个在黄昏里等风的人。
+          </p>
+          <span class="postcard-tulip" aria-hidden="true">
+            <TulipMark class="h-20 w-20" />
+          </span>
+        </div>
+        <p class="hero-vertical">屋檐 · 晚风 · 旧巷</p>
+      </aside>
+    </div>
+
+    <div class="container-page hero-foot">
+      <p class="hero-scroll">
+        <span aria-hidden="true"></span>
+        SCROLL TO WANDER
+      </p>
+      <p class="hero-meta">EST. {year} · 写给黄昏的慢信</p>
+    </div>
+  </section>
+
+  <section class="home-section container-page">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">RECENT LETTERS</p>
+        <h2 class="section-title">最近写下的字</h2>
+      </div>
+      <a class="section-link" href="/blog/">
+        全部文章
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+
+    {latestPosts.length > 0 ? (
+      <div class="post-grid">
+        {latestPosts.map((post, index) => <PostCard post={post} index={index} />)}
+      </div>
+    ) : (
+      <p class="empty-state">纸还没有铺好，晚一点再来。</p>
+    )}
+  </section>
+
+  <section class="home-section">
+    <div class="container-page">
+      <div class="quote-panel">
+        <span class="quote-mark" aria-hidden="true">“</span>
+        <p>生活不是等待一场盛大的晚霞，<br class="hidden sm:block" />而是记得抬头。</p>
+        <span class="quote-source">— 晚巷手记</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section container-page">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">FRAGMENTS OF DUSK</p>
+        <h2 class="section-title">黄昏切片</h2>
+      </div>
+      <a class="section-link" href="/notes/">
+        去看拾光集
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+
+    <div class="photo-strip">
+      {gallery.map((photo) => (
+        <a class="photo-card" href="/notes/">
+          <img
+            src={photo.src}
+            alt={photo.alt}
+            width="1280"
+            height="720"
+            loading="lazy"
+            decoding="async"
+          />
+          <span class="photo-shade" aria-hidden="true"></span>
+          <span class="photo-caption">
+            <span class="photo-caption-title">{photo.title}</span>
+            <span>{photo.note}</span>
+          </span>
+        </a>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,87 @@
+---
+import TulipMark from './TulipMark.astro';
+---
+
+<div class="music-player" data-music-player>
+  <span class="music-tip" data-music-tip>暮色唱片 · 点击播放</span>
+
+  <button
+    class="vinyl-button"
+    type="button"
+    data-music-toggle
+    aria-label="播放背景音乐：暮色唱片"
+    aria-pressed="false"
+  >
+    <span class="vinyl-disc" aria-hidden="true">
+      <span class="vinyl-sheen"></span>
+      <span class="vinyl-label">
+        <TulipMark class="h-4 w-4" />
+        <span class="vinyl-hole"></span>
+      </span>
+    </span>
+    <span class="vinyl-pulse" aria-hidden="true"></span>
+    <span class="play-indicator" aria-hidden="true">
+      <svg class="icon-play" viewBox="0 0 10 10" fill="none">
+        <path d="M3 2.2 8 5 3 7.8V2.2Z" fill="currentColor" />
+      </svg>
+      <svg class="icon-pause" viewBox="0 0 10 10" fill="none">
+        <path d="M3 2h1.3v6H3V2Zm2.7 0H7v6H5.7V2Z" fill="currentColor" />
+      </svg>
+    </span>
+  </button>
+
+  <audio
+    data-music-audio
+    src="/assets/music/twilight.mp3"
+    preload="none"
+    loop
+  ></audio>
+
+  <span class="sr-only" role="status" data-music-status></span>
+</div>
+
+<script>
+  const player = document.querySelector<HTMLElement>('[data-music-player]');
+  const button = document.querySelector<HTMLButtonElement>('[data-music-toggle]');
+  const audio = document.querySelector<HTMLAudioElement>('[data-music-audio]');
+  const tip = document.querySelector<HTMLElement>('[data-music-tip]');
+  const status = document.querySelector<HTMLElement>('[data-music-status]');
+
+  if (player && button && audio) {
+    audio.volume = 0.34;
+
+    const updateUI = (playing: boolean) => {
+      player.classList.toggle('is-playing', playing);
+      button.setAttribute('aria-pressed', String(playing));
+      button.setAttribute(
+        'aria-label',
+        playing ? '暂停背景音乐：暮色唱片' : '播放背景音乐：暮色唱片'
+      );
+      if (tip) tip.textContent = playing ? '暮色唱片 · 正在播放' : '暮色唱片 · 点击播放';
+      if (status) status.textContent = playing ? '背景音乐正在播放' : '背景音乐已暂停';
+    };
+
+    button.addEventListener('click', async () => {
+      if (audio.paused) {
+        try {
+          await audio.play();
+          updateUI(true);
+        } catch {
+          player.classList.add('is-error');
+          if (tip) tip.textContent = '音乐暂时没有回应';
+        }
+      } else {
+        audio.pause();
+        updateUI(false);
+      }
+    });
+
+    audio.addEventListener('pause', () => updateUI(false));
+    audio.addEventListener('play', () => updateUI(true));
+    audio.addEventListener('error', () => {
+      player.classList.add('is-error');
+      if (tip) tip.textContent = '音乐暂时没有回应';
+      button.setAttribute('aria-label', '背景音乐加载失败');
+    });
+  }
+</script>

@@ -1,0 +1,25 @@
+# build output
+dist/
+.astro/
+
+# dependencies
+node_modules/
+
+# local tooling / temp files
+.tmp_media/
+*.log
+*.tsbuildinfo
+
+# environment variables
+.env
+.env.*
+!.env.example
+
+# editor / OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# raw local video; production assets live in public/assets/
+/微信视频*.mp4

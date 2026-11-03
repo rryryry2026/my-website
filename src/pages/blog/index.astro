@@ -1,0 +1,41 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { getPublishedPosts } from '../../lib/posts';
+
+const posts = getPublishedPosts(await getCollection('blog'));
+const categories = [...new Set(posts.map((post) => post.data.category))];
+---
+
+<BaseLayout
+  title="文章"
+  description="写给黄昏的信，关于日常、旧巷、晚风，以及一些慢慢发生的事。"
+>
+  <section class="page-intro container-page">
+    <p class="eyebrow">WRITING · 文字</p>
+    <div class="page-intro-grid">
+      <h1 class="page-title">写给<br /><em>黄昏的信</em></h1>
+      <div class="page-intro-side">
+        <p class="page-desc">
+          不急，也不必写得完整。把看见的光、路过的风、忽然想起的人，慢慢放进句子里。
+        </p>
+        <p class="page-meta">
+          <span>{posts.length} 封信</span>
+          <span class="meta-dot"></span>
+          <span>{categories.length} 种心情</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page section-bottom">
+    {posts.length > 0 ? (
+      <div class="post-grid post-grid-blog">
+        {posts.map((post, index) => <PostCard post={post} index={index} />)}
+      </div>
+    ) : (
+      <p class="empty-state">信纸还是空的。等一场好看的晚霞，再写给你。</p>
+    )}
+  </section>
+</BaseLayout>

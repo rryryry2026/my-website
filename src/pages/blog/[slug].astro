@@ -1,0 +1,150 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ReadingProgress from '../../components/ReadingProgress.astro';
+import TableOfContents from '../../components/TableOfContents.astro';
+import TulipMark from '../../components/TulipMark.astro';
+import type { Post } from '../../lib/posts';
+import {
+  formatDate,
+  getPostSlug,
+  getPublishedPosts,
+  getReadingTime,
+} from '../../lib/posts';
+
+export async function getStaticPaths() {
+  const allPosts = getPublishedPosts(await getCollection('blog'));
+
+  return allPosts.map((post) => ({
+    params: { slug: getPostSlug(post) },
+    props: { post, allPosts },
+  }));
+}
+
+interface Props {
+  post: Post;
+  allPosts: Post[];
+}
+
+const { post, allPosts } = Astro.props;
+const { Content, headings } = await render(post);
+const readingMinutes = getReadingTime(post.body ?? '');
+const currentIndex = allPosts.findIndex((item) => item.id === post.id);
+const newerPost = currentIndex > 0 ? allPosts[currentIndex - 1] : undefined;
+const olderPost = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : undefined;
+const hasToc = headings.some((heading) => heading.depth >= 2 && heading.depth <= 3);
+---
+
+<BaseLayout title={post.data.title} description={post.data.description}>
+  <ReadingProgress />
+
+  <section class="post-page">
+    <div class="container-page">
+      <a class="back-link" href="/blog/">
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M16 10H4m5-5-5 5 5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        回到所有文章
+      </a>
+
+      <div class="post-layout">
+        <div>
+          <article class="post-panel" data-article>
+            <header class="post-header">
+              <div class="post-kicker">
+                <span class="category-chip">{post.data.category}</span>
+                <span class="post-kicker-line" aria-hidden="true"></span>
+                <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+              </div>
+
+              <h1 class="post-title">{post.data.title}</h1>
+              <p class="post-dek">{post.data.description}</p>
+
+              <div class="post-byline">
+                <span class="post-author">
+                  <span class="post-author-mark" aria-hidden="true">
+                    <TulipMark class="h-4 w-4" />
+                  </span>
+                  晚巷主人
+                </span>
+                <span class="meta-dot"></span>
+                <span>约 {readingMinutes} 分钟阅读</span>
+                {post.data.updatedDate && (
+                  <>
+                    <span class="meta-dot"></span>
+                    <span>更新于 {formatDate(post.data.updatedDate)}</span>
+                  </>
+                )}
+              </div>
+
+              {hasToc && (
+                <div class="post-mobile-toc">
+                  <details class="toc-details">
+                    <summary>
+                      <span>本页目录</span>
+                      <span class="details-icon" aria-hidden="true">＋</span>
+                    </summary>
+                    <TableOfContents headings={headings} compact />
+                  </details>
+                </div>
+              )}
+            </header>
+
+            <div class="post-body prose-warm">
+              <Content />
+            </div>
+
+            <footer class="post-footer">
+              {post.data.tags.length > 0 && (
+                <div class="post-tags" aria-label="文章标签">
+                  {post.data.tags.map((tag) => <span>#{tag}</span>)}
+                </div>
+              )}
+              <div class="post-signature">
+                <span class="post-signature-line" aria-hidden="true"></span>
+                <span>写于某个黄昏，晚风刚好</span>
+                <TulipMark class="h-5 w-5" />
+              </div>
+            </footer>
+          </article>
+
+          <nav class="post-pagination" aria-label="上一篇与下一篇">
+            {olderPost ? (
+              <a class="post-page-link" href={`/blog/${getPostSlug(olderPost)}/`}>
+                <span class="post-page-label">← 更早一篇</span>
+                <span class="post-page-title">{olderPost.data.title}</span>
+              </a>
+            ) : (
+              <span class="post-page-link post-page-link-empty">
+                <span class="post-page-label">已经是最早的一封</span>
+              </span>
+            )}
+
+            {newerPost ? (
+              <a class="post-page-link post-page-link-next" href={`/blog/${getPostSlug(newerPost)}/`}>
+                <span class="post-page-label">更新一篇 →</span>
+                <span class="post-page-title">{newerPost.data.title}</span>
+              </a>
+            ) : (
+              <span class="post-page-link post-page-link-next post-page-link-empty">
+                <span class="post-page-label">这里是最新的一封</span>
+              </span>
+            )}
+          </nav>
+        </div>
+
+        {hasToc && (
+          <aside class="post-aside">
+            <div class="post-aside-inner">
+              <TableOfContents headings={headings} />
+              <div class="aside-note">
+                <TulipMark class="h-6 w-6" />
+                <p>慢一点读，<br />晚霞不会催你。</p>
+              </div>
+            </div>
+          </aside>
+        )}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

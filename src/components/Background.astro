@@ -1,0 +1,81 @@
+---
+// 背景视频与兜底图。移动端 / 省流量 / 减少动态效果时自动切换为静态图。
+---
+
+<div class="site-background" aria-hidden="true">
+  <video
+    id="site-bg-video"
+    class="site-bg-video"
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="metadata"
+    poster="/assets/bg-poster.jpg"
+    tabindex="-1"
+    disablepictureinpicture
+  >
+    <source src="/assets/bg.mp4" type="video/mp4" />
+  </video>
+
+  <img
+    class="site-bg-poster"
+    src="/assets/bg-poster.jpg"
+    alt=""
+    width="1280"
+    height="720"
+    decoding="async"
+    fetchpriority="high"
+  />
+
+  <div class="site-bg-scrim"></div>
+  <div class="site-bg-grain"></div>
+</div>
+
+<script is:inline>
+  (() => {
+    const root = document.documentElement;
+    const video = document.getElementById('site-bg-video');
+
+    if (!video) return;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const saveData = Boolean(navigator.connection && navigator.connection.saveData);
+    const slowNetwork = Boolean(
+      navigator.connection &&
+        ['slow-2g', '2g'].includes(navigator.connection.effectiveType)
+    );
+
+    if (reduceMotion || saveData || slowNetwork) {
+      root.classList.add('bg-static');
+      video.pause();
+      return;
+    }
+
+    const useStatic = () => root.classList.add('bg-static');
+
+    // 低电量时也让视频退场（Battery API 可用时）
+    if ('getBattery' in navigator) {
+      navigator
+        .getBattery()
+        .then((battery) => {
+          if (!battery.charging && battery.level <= 0.2) {
+            useStatic();
+            video.pause();
+          }
+        })
+        .catch(() => {});
+    }
+
+    video.addEventListener('error', useStatic, { once: true });
+    video.play().catch(useStatic);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        video.pause();
+      } else if (!root.classList.contains('bg-static')) {
+        video.play().catch(useStatic);
+      }
+    });
+  })();
+</script>

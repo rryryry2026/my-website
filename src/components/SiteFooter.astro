@@ -1,0 +1,44 @@
+---
+import { site } from '../config';
+import { getYear } from '../lib/posts';
+import TulipMark from './TulipMark.astro';
+import SocialIcon from './SocialIcon.astro';
+
+const year = getYear();
+---
+
+<footer class="site-footer">
+  <div class="container-page">
+    <div class="footer-main">
+      <div class="footer-brand">
+        <span class="footer-mark">
+          <TulipMark class="h-6 w-6" />
+        </span>
+        <div>
+          <p class="footer-title">{site.fullTitle}</p>
+          <p class="footer-line">把日子过慢一点，把黄昏看久一点。</p>
+        </div>
+      </div>
+
+      <div class="footer-socials" aria-label="社交链接">
+        {site.socials.map((social) => (
+          <a
+            class="social-link"
+            href={social.href}
+            target={social.href.startsWith('http') ? '_blank' : undefined}
+            rel={social.href.startsWith('http') ? 'noreferrer noopener' : undefined}
+            aria-label={social.label}
+            title={social.label}
+          >
+            <SocialIcon icon={social.icon} />
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© {year} {site.author} · 保留所有柔软的念头</p>
+      <p class="footer-tech">Astro × Tailwind · 在晚风里搭建</p>
+    </div>
+  </div>
+</footer>

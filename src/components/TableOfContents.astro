@@ -1,0 +1,91 @@
+---
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  headings: Heading[];
+  compact?: boolean;
+}
+
+const { headings, compact = false } = Astro.props;
+const items = headings.filter((heading) => heading.depth >= 2 && heading.depth <= 3);
+---
+
+{items.length > 0 && (
+  <nav class:list={['toc', { 'toc-compact': compact }]} aria-label="文章目录" data-toc>
+    <p class="toc-title">本页目录</p>
+    <ol class="toc-list">
+      {items.map((heading) => (
+        <li class:list={['toc-item', { 'toc-item-sub': heading.depth === 3 }]}>
+          <a class="toc-link" href={`#${heading.slug}`} data-toc-link>
+            {heading.text}
+          </a>
+        </li>
+      ))}
+    </ol>
+  </nav>
+)}
+
+<script>
+  const tocContainers = document.querySelectorAll<HTMLElement>('[data-toc]');
+  const tocLinks = [...document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]')];
+
+  if (tocLinks.length > 0) {
+    const targets = tocLinks
+      .map((link) => {
+        const id = decodeURIComponent(link.hash.slice(1));
+        return { link, heading: document.getElementById(id) };
+      })
+      .filter((item): item is { link: HTMLAnchorElement; heading: HTMLElement } =>
+        Boolean(item.heading)
+      );
+
+    const setActive = (activeId: string) => {
+      tocLinks.forEach((link) => {
+        const isActive = decodeURIComponent(link.hash.slice(1)) === activeId;
+        link.classList.toggle('is-active', isActive);
+        if (isActive) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      });
+    };
+
+    let ticking = false;
+
+    const updateActive = () => {
+      const marker = window.scrollY + Math.min(180, window.innerHeight * 0.24);
+      let current = targets[0];
+
+      for (const item of targets) {
+        if (item.heading.offsetTop <= marker) current = item;
+      }
+
+      if (current) setActive(current.heading.id);
+      ticking = false;
+    };
+
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(updateActive);
+        }
+      },
+      { passive: true }
+    );
+
+    updateActive();
+
+    tocContainers.forEach((toc) => {
+      toc.addEventListener('click', (event) => {
+        if (event.target instanceof HTMLAnchorElement) {
+          const details = toc.closest('details');
+          if (details) details.removeAttribute('open');
+        }
+      });
+    });
+  }
+</script>
