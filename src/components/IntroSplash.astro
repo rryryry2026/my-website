@@ -63,12 +63,6 @@
       finished = true;
       clearTimeout(safetyTimer);
 
-      try {
-        sessionStorage.setItem('tulip-intro-seen', '1');
-      } catch (error) {
-        /* 隐私模式下无法写入，忽略 */
-      }
-
       if (shell) shell.removeAttribute('inert');
       root.classList.remove('has-intro');
 
@@ -98,27 +92,7 @@
       setTimeout(remove, 1000);
     };
 
-    // 是否还要播放开场
-    let seen = false;
-    try {
-      seen = sessionStorage.getItem('tulip-intro-seen') === '1';
-    } catch (error) {
-      /* 忽略 */
-    }
-
-    const forced = new URLSearchParams(window.location.search).has('intro');
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const connection = navigator.connection;
-    const saveData = Boolean(
-      connection &&
-        (connection.saveData || ['slow-2g', '2g'].includes(connection.effectiveType))
-    );
-
-    if ((seen && !forced) || reduceMotion || saveData) {
-      dismiss(true);
-      return;
-    }
-
+    // 每次进入首页都播放开场，不再记忆“已看过”。
     // 开场期间先停掉背景视频，避免同时解码两路。
     if (background) background.pause();
     if (shell) shell.setAttribute('inert', '');

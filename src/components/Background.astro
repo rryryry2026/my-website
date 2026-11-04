@@ -1,5 +1,5 @@
 ---
-// 背景视频与兜底图。移动端 / 省流量 / 减少动态效果时自动切换为静态图。
+// 背景视频与兜底图。视频加载失败或自动播放被阻止时才切换为静态图。
 interface Props {
   /** 首页开场期间先不启动背景视频，等开场的视频结束后再播放 */
   defer?: boolean;
@@ -46,33 +46,7 @@ const { defer = false } = Astro.props;
 
     if (!video) return;
 
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const saveData = Boolean(navigator.connection && navigator.connection.saveData);
-    const slowNetwork = Boolean(
-      navigator.connection &&
-        ['slow-2g', '2g'].includes(navigator.connection.effectiveType)
-    );
-
-    if (reduceMotion || saveData || slowNetwork) {
-      root.classList.add('bg-static');
-      video.pause();
-      return;
-    }
-
     const useStatic = () => root.classList.add('bg-static');
-
-    // 低电量时也让视频退场（Battery API 可用时）
-    if ('getBattery' in navigator) {
-      navigator
-        .getBattery()
-        .then((battery) => {
-          if (!battery.charging && battery.level <= 0.2) {
-            useStatic();
-            video.pause();
-          }
-        })
-        .catch(() => {});
-    }
 
     video.addEventListener('error', useStatic, { once: true });
 

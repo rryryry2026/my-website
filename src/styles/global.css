@@ -3106,14 +3106,6 @@ html.has-intro .site-shell {
 }
 
 @media (max-width: 768px) {
-  .site-bg-video {
-    display: none;
-  }
-
-  .site-bg-poster {
-    display: block;
-  }
-
   .container-page {
     width: calc(100% - 2.2rem);
   }
@@ -3410,14 +3402,6 @@ html.has-intro .site-shell {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-
-  .site-bg-video {
-    display: none;
-  }
-
-  .site-bg-poster {
-    display: block;
   }
 
   .hero-scroll span::after {
