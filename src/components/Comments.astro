@@ -1,0 +1,59 @@
+---
+import { site } from '../config';
+
+interface Props {
+  /** 没有配置 Giscus 时是否显示占位说明 */
+  placeholder?: boolean;
+}
+
+const { placeholder = false } = Astro.props;
+const comments = site.comments;
+const configured = Boolean(
+  comments?.enabled && comments.repo && comments.repoId && comments.categoryId
+);
+---
+
+{configured ? (
+  <section class="comments-section">
+    <div class="comments-head">
+      <div>
+        <p class="eyebrow">COMMENTS · 留言</p>
+        <h2 class="comments-title">说点什么</h2>
+      </div>
+      <span class="comments-note">用 GitHub 账号留言</span>
+    </div>
+    <div class="comments-panel">
+      <script
+        is:inline
+        src="https://giscus.app/client.js"
+        data-repo={comments.repo}
+        data-repo-id={comments.repoId}
+        data-category={comments.category}
+        data-category-id={comments.categoryId}
+        data-mapping={comments.mapping}
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="top"
+        data-theme={comments.theme}
+        data-lang={comments.lang}
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async
+      ></script>
+    </div>
+  </section>
+) : placeholder ? (
+  <section class="comments-section">
+    <div class="comments-head">
+      <div>
+        <p class="eyebrow">COMMENTS · 留言</p>
+        <h2 class="comments-title">说点什么</h2>
+      </div>
+    </div>
+    <div class="comments-empty">
+      <p>留言板正在准备中，很快就能在这里说话了。</p>
+      <p class="hint">如果想现在开启，请在管理端配置 Giscus。</p>
+    </div>
+  </section>
+) : null}

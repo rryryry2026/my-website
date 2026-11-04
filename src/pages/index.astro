@@ -4,8 +4,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PostCard from '../components/PostCard.astro';
 import TulipMark from '../components/TulipMark.astro';
 import { site } from '../config';
-import { getPublishedPosts, getYear } from '../lib/posts';
-import photos from '../data/photos.json';
+import { formatDate, getPublishedPosts, getYear } from '../lib/posts';
+import { moments, now, photos } from '../lib/data';
 
 const posts = getPublishedPosts(await getCollection('blog'));
 const latestPosts = posts.slice(0, 3);
@@ -18,7 +18,7 @@ const { home } = site;
 <BaseLayout intro>
   <section class="home-hero">
     <div class="container-page hero-grid">
-      <div class="hero-content">
+      <div class="hero-content" data-parallax="0.03">
         <p class="eyebrow hero-eyebrow">{home.eyebrow}</p>
 
         <div class="hero-title-wrap">
@@ -64,7 +64,7 @@ const { home } = site;
         </div>
       </div>
 
-      <aside class="hero-aside" aria-label="黄昏手记">
+      <aside class="hero-aside" aria-label="黄昏手记" data-parallax="0.07">
         <div class="hero-postcard">
           <p class="postcard-stamp">{home.postcard.stamp}</p>
           <blockquote class="postcard-quote">
@@ -104,6 +104,42 @@ const { home } = site;
   <section class="home-section container-page">
     <div class="section-head">
       <div>
+        <p class="eyebrow">RIGHT NOW</p>
+        <h2 class="section-title">此刻</h2>
+      </div>
+      <a class="section-link" href="/now/">
+        看看我的此刻
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+
+    <div class="now-grid">
+      <article class="now-card now-card-wide">
+        <p class="now-label">最近在做</p>
+        <p class="now-value">{now.focus}</p>
+      </article>
+      <article class="now-card">
+        <p class="now-label">坐标</p>
+        <p class="now-value">{now.location}</p>
+      </article>
+      <article class="now-card">
+        <p class="now-label">心情</p>
+        <p class="now-value">{now.mood}</p>
+      </article>
+      <article class="now-card">
+        <p class="now-label">在读</p>
+        <p class="now-value">{now.reading}</p>
+      </article>
+      <article class="now-card">
+        <p class="now-label">在听</p>
+        <p class="now-value">{now.listening}</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="home-section container-page">
+    <div class="section-head">
+      <div>
         <p class="eyebrow">RECENT LETTERS</p>
         <h2 class="section-title">最近写下的字</h2>
       </div>
@@ -120,6 +156,29 @@ const { home } = site;
     ) : (
       <p class="empty-state">纸还没有铺好，晚一点再来。</p>
     )}
+  </section>
+
+  <section class="home-section container-page">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">MOMENTS</p>
+        <h2 class="section-title">近日动态</h2>
+      </div>
+      <a class="section-link" href="/moments/">
+        全部动态
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+
+    <div class="home-moments">
+      {moments.slice(0, 3).map((moment) => (
+        <a class="home-moment" href={`/moments/#${moment.id}`}>
+          <time datetime={moment.date}>{formatDate(new Date(moment.date))}</time>
+          <p>{moment.text}</p>
+          <span>{[moment.mood, moment.location].filter(Boolean).join(' · ')}</span>
+        </a>
+      ))}
+    </div>
   </section>
 
   <section class="home-section">
@@ -145,15 +204,15 @@ const { home } = site;
         <p class="eyebrow">FRAGMENTS OF DUSK</p>
         <h2 class="section-title">黄昏切片</h2>
       </div>
-      <a class="section-link" href="/life/">
-        去看拾光集
+      <a class="section-link" href="/gallery/">
+        去看全部照片
         <span aria-hidden="true">→</span>
       </a>
     </div>
 
     <div class="photo-strip">
       {gallery.map((photo) => (
-        <a class="photo-card" href="/life/">
+        <a class="photo-card" href="/gallery/">
           <img
             src={photo.src}
             alt={photo.alt}
@@ -169,6 +228,38 @@ const { home } = site;
           </span>
         </a>
       ))}
+    </div>
+  </section>
+
+  <section class="home-section container-page">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">KEEP WANDERING</p>
+        <h2 class="section-title">继续逛逛</h2>
+      </div>
+    </div>
+
+    <div class="explore-grid">
+      <a class="explore-card" href="/archive/">
+        <span class="explore-index">01</span>
+        <strong>归档</strong>
+        <span>按年份和月份翻看所有文字</span>
+      </a>
+      <a class="explore-card" href="/tags/">
+        <span class="explore-index">02</span>
+        <strong>标签</strong>
+        <span>顺着气味相近的词走一走</span>
+      </a>
+      <a class="explore-card" href="/friends/">
+        <span class="explore-index">03</span>
+        <strong>友链</strong>
+        <span>去别人的黄昏里坐坐</span>
+      </a>
+      <a class="explore-card" href="/guestbook/">
+        <span class="explore-index">04</span>
+        <strong>留言板</strong>
+        <span>路过的话，留一句再走</span>
+      </a>
     </div>
   </section>
 </BaseLayout>

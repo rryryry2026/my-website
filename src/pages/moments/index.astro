@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { moments } from '../../lib/data';
+import { formatDate } from '../../lib/posts';
+---
+
+<BaseLayout
+  title="动态"
+  description="一些比文章更轻、更即时的日常片段。"
+>
+  <section class="page-intro container-page">
+    <p class="eyebrow">MOMENTS · 日常片段</p>
+    <div class="page-intro-grid">
+      <h1 class="page-title">一些<br /><em>很轻的时刻</em></h1>
+      <div class="page-intro-side">
+        <p class="page-desc">
+          不足以写成一篇字的瞬间，就先放在这里。像口袋里随手揣着的糖纸。
+        </p>
+        <p class="page-meta">
+          <span>{moments.length} 条动态</span>
+          <span class="meta-dot"></span>
+          <span>随时更新</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page moments-section">
+    {moments.length > 0 ? (
+      <div class="moments-list">
+        {moments.map((moment) => (
+          <article class="moment-card" id={moment.id}>
+            <div class="moment-side">
+              <time datetime={moment.date}>{formatDate(new Date(moment.date))}</time>
+              {(moment.mood || moment.location) && (
+                <span class="moment-meta">
+                  {[moment.mood, moment.location].filter(Boolean).join(' · ')}
+                </span>
+              )}
+            </div>
+
+            <div class="moment-body">
+              <p>{moment.text}</p>
+              {moment.image && (
+                <img
+                  src={moment.image}
+                  alt=""
+                  width="1280"
+                  height="720"
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <p class="empty-state">还没有动态。日子还在慢慢过。</p>
+    )}
+  </section>
+</BaseLayout>

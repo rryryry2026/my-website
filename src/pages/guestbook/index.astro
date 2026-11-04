@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Comments from '../../components/Comments.astro';
+import { site } from '../../config';
+---
+
+<BaseLayout
+  title="留言板"
+  description="路过的话，留一句话再走。"
+>
+  <section class="page-intro container-page">
+    <p class="eyebrow">GUESTBOOK · 留言板</p>
+    <div class="page-intro-grid">
+      <h1 class="page-title">路过的话<br /><em>坐一会儿</em></h1>
+      <div class="page-intro-side">
+        <p class="page-desc">
+          不用写得很完整。一句话、一个招呼，或者只是今天看到的晚霞，都可以留在这里。
+        </p>
+        <p class="page-meta">
+          <span>用 GitHub 账号留言</span>
+          <span class="meta-dot"></span>
+          <a class="meta-link" href={`mailto:${site.email}`}>也可以写信 →</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page guestbook-section">
+    <Comments placeholder />
+  </section>
+</BaseLayout>

@@ -860,6 +860,15 @@ const LABELS = {
   siteText: '站点说明',
   href: '链接地址',
   icon: '图标',
+  comments: '评论（Giscus）',
+  enabled: '启用评论',
+  repo: 'GitHub 仓库（owner/repo）',
+  repoId: 'Repository ID',
+  category: 'Discussion 分类名',
+  categoryId: 'Category ID',
+  mapping: '映射方式',
+  theme: 'Giscus 主题',
+  lang: '语言',
 };
 
 const LABEL_OVERRIDES = {
@@ -872,6 +881,14 @@ const LABEL_OVERRIDES = {
   'home.postcard.note': '明信片附言（每行一句）',
   'home.quote': '首页引文（每行一句）',
   'about.texts': '正文段落（每行一段）',
+  'comments.repo': 'GitHub 仓库（owner/repo）',
+  'comments.repoId': 'Repository ID',
+  'comments.category': 'Discussion 分类名',
+  'comments.categoryId': 'Category ID',
+  'comments.mapping': '映射方式',
+  'comments.theme': 'Giscus 主题（推荐 transparent_dark）',
+  'comments.lang': '语言',
+  'comments.enabled': '启用评论',
 };
 
 const labelFor = (path, key) =>
@@ -889,6 +906,36 @@ function renderStringField(key, value, path) {
       <select data-path="${esc(path)}">
         ${['github', 'instagram', 'mail']
           .map((icon) => `<option value="${icon}"${icon === value ? ' selected' : ''}>${icon}</option>`)
+          .join('')}
+      </select>
+    </label>`;
+  }
+
+  if (key === 'mapping') {
+    return `<label class="field">${label}
+      <select data-path="${esc(path)}">
+        ${['pathname', 'url', 'title', 'og:title', 'specific', 'number']
+          .map((item) => `<option value="${item}"${item === value ? ' selected' : ''}>${item}</option>`)
+          .join('')}
+      </select>
+    </label>`;
+  }
+
+  if (key === 'theme') {
+    return `<label class="field">${label}
+      <select data-path="${esc(path)}">
+        ${['transparent_dark', 'dark_dimmed', 'dark', 'light', 'preferred_color_scheme']
+          .map((item) => `<option value="${item}"${item === value ? ' selected' : ''}>${item}</option>`)
+          .join('')}
+      </select>
+    </label>`;
+  }
+
+  if (key === 'lang') {
+    return `<label class="field">${label}
+      <select data-path="${esc(path)}">
+        ${['zh-CN', 'en']
+          .map((item) => `<option value="${item}"${item === value ? ' selected' : ''}>${item}</option>`)
           .join('')}
       </select>
     </label>`;
@@ -1004,6 +1051,17 @@ async function loadSiteData() {
   const result = await api('/api/site');
   state.site = result.site;
   state.photos = result.photos;
+  state.site.comments = {
+    enabled: false,
+    repo: 'rryryry2026/my-website',
+    repoId: '',
+    category: 'Announcements',
+    categoryId: '',
+    mapping: 'pathname',
+    theme: 'transparent_dark',
+    lang: 'zh-CN',
+    ...(state.site.comments ?? {}),
+  };
 }
 
 function renderSiteForm() {
@@ -1042,6 +1100,12 @@ function renderSiteForm() {
         Object.entries(site.about)
           .map(([key, value]) => renderValue(key, value, `about.${key}`))
           .join('')
+      )}
+      ${sectionCard(
+        'comments',
+        '评论与留言',
+        'Giscus 配置；repoId 或 categoryId 为空时评论不显示',
+        renderValue('comments', site.comments, 'comments')
       )}
     </form>
 
@@ -1371,6 +1435,404 @@ async function viewTags() {
 }
 
 /* -------------------------------------------------------------------------- */
+/* 此刻                                                                        */
+/* -------------------------------------------------------------------------- */
+
+async function viewNow() {
+  setNav('now');
+  setCrumb('此刻');
+  loading();
+
+  const { data } = await api('/api/data/now');
+  state.now = {
+    updatedAt: today(),
+    focus: '',
+    location: '',
+    mood: '',
+    reading: '',
+    listening: '',
+    note: '',
+    ...data,
+  };
+
+  const field = (key, label, type = 'text') => `
+    <label class="field">
+      <span>${label}</span>
+      ${
+        type === 'textarea'
+          ? `<textarea data-now="${key}" rows="4">${esc(state.now[key])}</textarea>`
+          : `<input type="${type}" data-now="${key}" value="${esc(state.now[key])}">`
+      }
+    </label>`;
+
+  viewEl.innerHTML = `
+    <div class="page-head">
+      <div>
+        <h1>此刻</h1>
+        <p>首页「此刻」区块和 /now/ 页面共用这份数据</p>
+      </div>
+      <div class="top-actions">
+        <a class="btn ghost" href="${esc(state.previewUrl)}now/" target="_blank" rel="noreferrer">预览页面 ↗</a>
+        <button class="btn primary" type="button" id="save-now">保存此刻</button>
+      </div>
+    </div>
+
+    <form class="settings-sections" id="now-form">
+      <section class="section-card">
+        <div class="section-head">
+          <div>
+            <h2>近况</h2>
+            <div class="section-sub">写给此刻的自己</div>
+          </div>
+        </div>
+        <div class="section-body">
+          ${field('updatedAt', '更新日期', 'date')}
+          ${field('focus', '最近在做')}
+          ${field('location', '坐标')}
+          ${field('mood', '心情')}
+          ${field('reading', '在读')}
+          ${field('listening', '在听')}
+          <div class="span-2">${field('note', '手记', 'textarea')}</div>
+        </div>
+      </section>
+    </form>
+
+    <div class="toolbar" style="margin-top:1rem">
+      <button class="btn primary" type="button" id="save-now-bottom">保存此刻</button>
+      <span class="hint" id="now-state">保存后网站会自动热更新</span>
+    </div>
+  `;
+
+  const form = document.getElementById('now-form');
+  const sync = () => {
+    form.querySelectorAll('[data-now]').forEach((input) => {
+      state.now[input.dataset.now] = input.value;
+    });
+    markDirty(true);
+    const hint = document.getElementById('now-state');
+    if (hint) hint.textContent = '有未保存的修改';
+  };
+
+  form.addEventListener('input', sync);
+  form.addEventListener('change', sync);
+
+  const save = async () => {
+    try {
+      await api('/api/data/now', { method: 'PUT', body: { data: state.now } });
+      markDirty(false);
+      const hint = document.getElementById('now-state');
+      if (hint) hint.textContent = '已保存';
+      toast('此刻已保存');
+    } catch (error) {
+      toast(error.message, true);
+    }
+  };
+
+  document.getElementById('save-now').addEventListener('click', save);
+  document.getElementById('save-now-bottom').addEventListener('click', save);
+}
+
+/* -------------------------------------------------------------------------- */
+/* 动态                                                                        */
+/* -------------------------------------------------------------------------- */
+
+async function viewMoments() {
+  setNav('moments');
+  setCrumb('动态');
+  loading();
+  const { data } = await api('/api/data/moments');
+  state.moments = Array.isArray(data) ? data : [];
+  renderMomentsForm();
+}
+
+function renderMomentsForm() {
+  const moments = state.moments;
+
+  viewEl.innerHTML = `
+    <div class="page-head">
+      <div>
+        <h1>动态</h1>
+        <p>${moments.length} 条动态 · 首页「近日动态」和 /moments/ 共用这份数据</p>
+      </div>
+      <div class="top-actions">
+        <a class="btn ghost" href="${esc(state.previewUrl)}moments/" target="_blank" rel="noreferrer">预览页面 ↗</a>
+        <button class="btn ghost" type="button" id="add-moment">＋ 添加动态</button>
+        <button class="btn primary" type="button" id="save-moments">保存动态</button>
+      </div>
+    </div>
+
+    ${
+      moments.length
+        ? `<div class="photo-grid">${moments
+            .map(
+              (moment, index) => `
+          <div class="photo-card">
+            ${
+              moment.image
+                ? `<img src="${esc(moment.image)}" alt="" loading="lazy">`
+                : '<div class="admin-thumb-empty">暂无图片</div>'
+            }
+            <div class="panel-pad">
+              <label class="field"><span>日期</span><input type="date" data-moment="${index}" data-field="date" value="${esc(moment.date)}"></label>
+              <label class="field"><span>内容</span><textarea data-moment="${index}" data-field="text" rows="3">${esc(moment.text)}</textarea></label>
+              <label class="field"><span>心情</span><input type="text" data-moment="${index}" data-field="mood" value="${esc(moment.mood)}"></label>
+              <label class="field"><span>地点</span><input type="text" data-moment="${index}" data-field="location" value="${esc(moment.location)}"></label>
+              <label class="field">
+                <span>图片（可选）</span>
+                <span class="src-row">
+                  <input type="text" data-moment="${index}" data-field="image" value="${esc(moment.image)}" placeholder="/uploads/...">
+                  <button class="upload-mini" type="button" data-upload-moment="${index}">上传</button>
+                </span>
+              </label>
+              <div class="actions">
+                <button class="btn ghost small" type="button" data-move-moment="${index}" data-dir="-1"${index === 0 ? ' disabled' : ''}>↑ 上移</button>
+                <button class="btn ghost small" type="button" data-move-moment="${index}" data-dir="1"${index === moments.length - 1 ? ' disabled' : ''}>↓ 下移</button>
+                <button class="btn danger small" type="button" data-remove-moment="${index}">删除</button>
+              </div>
+            </div>
+          </div>`
+            )
+            .join('')}</div>`
+        : '<div class="empty">还没有动态，添加第一条吧。</div>'
+    }
+
+    <div class="toolbar" style="margin-top:1rem">
+      <button class="btn primary" type="button" id="save-moments-bottom">保存动态</button>
+      <span class="hint" id="moments-state">保存后网站会自动热更新</span>
+    </div>
+  `;
+
+  viewEl.oninput = (event) => {
+    const target = event.target.closest('[data-moment]');
+    if (!target) return;
+    state.moments[Number(target.dataset.moment)][target.dataset.field] = target.value;
+    markDirty(true);
+    const hint = document.getElementById('moments-state');
+    if (hint) hint.textContent = '有未保存的修改';
+  };
+
+  viewEl.onclick = async (event) => {
+    const uploadButton = event.target.closest('[data-upload-moment]');
+    if (uploadButton) {
+      try {
+        const index = Number(uploadButton.dataset.uploadMoment);
+        const saved = await pickAndUpload();
+        if (!saved) return;
+        state.moments[index].image = saved.url;
+        markDirty(true);
+        renderMomentsForm();
+      } catch (error) {
+        toast(error.message, true);
+      }
+      return;
+    }
+
+    const moveButton = event.target.closest('[data-move-moment]');
+    if (moveButton) {
+      const index = Number(moveButton.dataset.moveMoment);
+      const direction = Number(moveButton.dataset.dir);
+      const target = index + direction;
+      if (target < 0 || target >= state.moments.length) return;
+      [state.moments[index], state.moments[target]] = [
+        state.moments[target],
+        state.moments[index],
+      ];
+      markDirty(true);
+      renderMomentsForm();
+      return;
+    }
+
+    const removeButton = event.target.closest('[data-remove-moment]');
+    if (removeButton) {
+      if (!confirm('确定删除这条动态吗？')) return;
+      state.moments.splice(Number(removeButton.dataset.removeMoment), 1);
+      markDirty(true);
+      renderMomentsForm();
+      return;
+    }
+
+    if (event.target.closest('#add-moment')) {
+      state.moments.unshift({
+        id: `m-${Date.now()}`,
+        date: today(),
+        text: '',
+        mood: '',
+        location: '',
+        image: '',
+      });
+      markDirty(true);
+      renderMomentsForm();
+      return;
+    }
+
+    if (
+      event.target.closest('#save-moments') ||
+      event.target.closest('#save-moments-bottom')
+    ) {
+      try {
+        state.moments.sort((a, b) => b.date.localeCompare(a.date));
+        await api('/api/data/moments', { method: 'PUT', body: { data: state.moments } });
+        markDirty(false);
+        toast('动态已保存');
+        renderMomentsForm();
+        const hint = document.getElementById('moments-state');
+        if (hint) hint.textContent = '已保存';
+      } catch (error) {
+        toast(error.message, true);
+      }
+    }
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* 友链                                                                        */
+/* -------------------------------------------------------------------------- */
+
+async function viewFriends() {
+  setNav('friends');
+  setCrumb('友链');
+  loading();
+  const { data } = await api('/api/data/friends');
+  state.friends = Array.isArray(data) ? data : [];
+  renderFriendsForm();
+}
+
+function renderFriendsForm() {
+  const friends = state.friends;
+
+  viewEl.innerHTML = `
+    <div class="page-head">
+      <div>
+        <h1>友链</h1>
+        <p>${friends.length} 个友链 · 显示在 /friends/ 页面</p>
+      </div>
+      <div class="top-actions">
+        <a class="btn ghost" href="${esc(state.previewUrl)}friends/" target="_blank" rel="noreferrer">预览页面 ↗</a>
+        <button class="btn ghost" type="button" id="add-friend">＋ 添加友链</button>
+        <button class="btn primary" type="button" id="save-friends">保存友链</button>
+      </div>
+    </div>
+
+    ${
+      friends.length
+        ? `<div class="photo-grid">${friends
+            .map(
+              (friend, index) => `
+          <div class="photo-card">
+            ${
+              friend.avatar
+                ? `<img src="${esc(friend.avatar)}" alt="" loading="lazy" style="aspect-ratio: 1; object-fit: cover;">`
+                : '<div class="admin-thumb-empty">暂无头像</div>'
+            }
+            <div class="panel-pad">
+              <label class="field"><span>名称</span><input type="text" data-friend="${index}" data-field="name" value="${esc(friend.name)}"></label>
+              <label class="field"><span>地址</span><input type="url" data-friend="${index}" data-field="url" value="${esc(friend.url)}" placeholder="https://"></label>
+              <label class="field"><span>描述</span><textarea data-friend="${index}" data-field="description" rows="2">${esc(friend.description)}</textarea></label>
+              <label class="field">
+                <span>头像（可选）</span>
+                <span class="src-row">
+                  <input type="text" data-friend="${index}" data-field="avatar" value="${esc(friend.avatar)}" placeholder="/uploads/...">
+                  <button class="upload-mini" type="button" data-upload-friend="${index}">上传</button>
+                </span>
+              </label>
+              <div class="actions">
+                <button class="btn ghost small" type="button" data-move-friend="${index}" data-dir="-1"${index === 0 ? ' disabled' : ''}>↑ 上移</button>
+                <button class="btn ghost small" type="button" data-move-friend="${index}" data-dir="1"${index === friends.length - 1 ? ' disabled' : ''}>↓ 下移</button>
+                <button class="btn danger small" type="button" data-remove-friend="${index}">删除</button>
+              </div>
+            </div>
+          </div>`
+            )
+            .join('')}</div>`
+        : '<div class="empty">还没有友链，添加第一个吧。</div>'
+    }
+
+    <div class="toolbar" style="margin-top:1rem">
+      <button class="btn primary" type="button" id="save-friends-bottom">保存友链</button>
+      <span class="hint" id="friends-state">保存后网站会自动热更新</span>
+    </div>
+  `;
+
+  viewEl.oninput = (event) => {
+    const target = event.target.closest('[data-friend]');
+    if (!target) return;
+    state.friends[Number(target.dataset.friend)][target.dataset.field] = target.value;
+    markDirty(true);
+    const hint = document.getElementById('friends-state');
+    if (hint) hint.textContent = '有未保存的修改';
+  };
+
+  viewEl.onclick = async (event) => {
+    const uploadButton = event.target.closest('[data-upload-friend]');
+    if (uploadButton) {
+      try {
+        const index = Number(uploadButton.dataset.uploadFriend);
+        const saved = await pickAndUpload();
+        if (!saved) return;
+        state.friends[index].avatar = saved.url;
+        markDirty(true);
+        renderFriendsForm();
+      } catch (error) {
+        toast(error.message, true);
+      }
+      return;
+    }
+
+    const moveButton = event.target.closest('[data-move-friend]');
+    if (moveButton) {
+      const index = Number(moveButton.dataset.moveFriend);
+      const direction = Number(moveButton.dataset.dir);
+      const target = index + direction;
+      if (target < 0 || target >= state.friends.length) return;
+      [state.friends[index], state.friends[target]] = [
+        state.friends[target],
+        state.friends[index],
+      ];
+      markDirty(true);
+      renderFriendsForm();
+      return;
+    }
+
+    const removeButton = event.target.closest('[data-remove-friend]');
+    if (removeButton) {
+      if (!confirm('确定删除这个友链吗？')) return;
+      state.friends.splice(Number(removeButton.dataset.removeFriend), 1);
+      markDirty(true);
+      renderFriendsForm();
+      return;
+    }
+
+    if (event.target.closest('#add-friend')) {
+      state.friends.push({
+        name: '新友链',
+        url: 'https://',
+        description: '',
+        avatar: '',
+      });
+      markDirty(true);
+      renderFriendsForm();
+      return;
+    }
+
+    if (
+      event.target.closest('#save-friends') ||
+      event.target.closest('#save-friends-bottom')
+    ) {
+      try {
+        await api('/api/data/friends', { method: 'PUT', body: { data: state.friends } });
+        markDirty(false);
+        toast('友链已保存');
+        renderFriendsForm();
+        const hint = document.getElementById('friends-state');
+        if (hint) hint.textContent = '已保存';
+      } catch (error) {
+        toast(error.message, true);
+      }
+    }
+  };
+}
+
+/* -------------------------------------------------------------------------- */
 /* 路由                                                                        */
 /* -------------------------------------------------------------------------- */
 
@@ -1396,6 +1858,12 @@ async function route() {
       await viewSite();
     } else if (section === 'photos') {
       await viewPhotos();
+    } else if (section === 'now') {
+      await viewNow();
+    } else if (section === 'moments') {
+      await viewMoments();
+    } else if (section === 'friends') {
+      await viewFriends();
     } else if (section === 'tags') {
       await viewTags();
     } else {

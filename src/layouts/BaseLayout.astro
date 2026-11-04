@@ -3,6 +3,7 @@ import { site } from '../config';
 import '../styles/global.css';
 import Background from '../components/Background.astro';
 import IntroSplash from '../components/IntroSplash.astro';
+import SearchDialog from '../components/SearchDialog.astro';
 import BaseHead from '../components/BaseHead.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
@@ -48,5 +49,62 @@ const pageTitle = title ? `${title} · ${site.title}` : site.fullTitle;
     </div>
 
     {intro && <IntroSplash />}
+    <SearchDialog />
+
+    <script is:inline>
+      (() => {
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduceMotion) return;
+
+        const revealItems = [
+          ...document.querySelectorAll(
+            '.home-section, .post-card, .photo-card, .note-row, .gallery-item, .now-card, .home-moment, .explore-card, .archive-entry, .tag-pill, .friend-card, .moment-card, .gallery-page-item, .comments-section'
+          ),
+        ];
+
+        if ('IntersectionObserver' in window && revealItems.length) {
+          revealItems.forEach((element, index) => {
+            element.classList.add('reveal-item');
+            element.style.transitionDelay = `${Math.min((index % 4) * 70, 210)}ms`;
+          });
+
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('is-revealed');
+                observer.unobserve(entry.target);
+              });
+            },
+            { threshold: 0.08, rootMargin: '0px 0px -30px' }
+          );
+
+          revealItems.forEach((element) => observer.observe(element));
+        }
+
+        const parallaxItems = [...document.querySelectorAll('[data-parallax]')];
+        if (parallaxItems.length && window.innerWidth > 900) {
+          let ticking = false;
+          const update = () => {
+            const scrollY = window.scrollY;
+            parallaxItems.forEach((element) => {
+              const speed = Number(element.dataset.parallax) || 0.05;
+              element.style.transform = `translate3d(0, ${(scrollY * speed).toFixed(2)}px, 0)`;
+            });
+            ticking = false;
+          };
+
+          window.addEventListener(
+            'scroll',
+            () => {
+              if (ticking) return;
+              ticking = true;
+              requestAnimationFrame(update);
+            },
+            { passive: true }
+          );
+        }
+      })();
+    </script>
   </body>
 </html>

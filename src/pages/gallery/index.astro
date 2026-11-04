@@ -1,0 +1,125 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { photos } from '../../lib/data';
+---
+
+<BaseLayout
+  title="相册"
+  description="镜头替我记住的黄昏、旧巷和晚风。"
+>
+  <section class="page-intro container-page">
+    <p class="eyebrow">GALLERY · 拾光集</p>
+    <div class="page-intro-grid">
+      <h1 class="page-title">把光<br /><em>留在纸上</em></h1>
+      <div class="page-intro-side">
+        <p class="page-desc">
+          镜头替我记住的黄昏、旧巷和晚风。点开一张，可以看得久一点。
+        </p>
+        <p class="page-meta">
+          <span>{photos.length} 个瞬间</span>
+          <span class="meta-dot"></span>
+          <span>持续更新中</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page gallery-page-section">
+    {photos.length > 0 ? (
+      <div class="gallery-page-grid">
+        {photos.map((photo, index) => (
+          <figure class="gallery-page-item">
+            <button
+              class="gallery-page-button"
+              type="button"
+              data-lightbox
+              data-src={photo.src}
+              data-alt={photo.alt}
+              data-title={photo.title}
+              data-note={photo.note}
+              aria-label={`查看照片：${photo.title}`}
+            >
+              <img
+                src={photo.src}
+                alt={photo.alt}
+                width="1280"
+                height="720"
+                loading={index > 0 ? 'lazy' : 'eager'}
+                decoding="async"
+              />
+              <span class="gallery-page-shade" aria-hidden="true"></span>
+              <span class="gallery-page-caption">
+                <strong>{photo.title}</strong>
+                <span>{photo.note}</span>
+              </span>
+            </button>
+          </figure>
+        ))}
+      </div>
+    ) : (
+      <p class="empty-state">相册还是空的，等一场好看的晚霞。</p>
+    )}
+  </section>
+
+  <dialog class="lightbox" id="lightbox" aria-label="照片预览">
+    <button class="lightbox-close" type="button" data-lightbox-close aria-label="关闭">×</button>
+    <button class="lightbox-nav lightbox-prev" type="button" data-lightbox-prev aria-label="上一张">←</button>
+    <figure class="lightbox-figure">
+      <img id="lightbox-image" alt="" />
+      <figcaption>
+        <strong id="lightbox-title"></strong>
+        <span id="lightbox-note"></span>
+      </figcaption>
+    </figure>
+    <button class="lightbox-nav lightbox-next" type="button" data-lightbox-next aria-label="下一张">→</button>
+  </dialog>
+
+  <script is:inline>
+    (() => {
+      const dialog = document.getElementById('lightbox');
+      if (!dialog) return;
+
+      const triggers = [...document.querySelectorAll('[data-lightbox]')];
+      const image = document.getElementById('lightbox-image');
+      const title = document.getElementById('lightbox-title');
+      const note = document.getElementById('lightbox-note');
+      let index = 0;
+
+      const show = (nextIndex) => {
+        if (!triggers.length) return;
+        index = (nextIndex + triggers.length) % triggers.length;
+        const trigger = triggers[index];
+        image.src = trigger.dataset.src;
+        image.alt = trigger.dataset.alt || '';
+        title.textContent = trigger.dataset.title || '';
+        note.textContent = trigger.dataset.note || '';
+      };
+
+      triggers.forEach((trigger, itemIndex) => {
+        trigger.addEventListener('click', () => {
+          show(itemIndex);
+          dialog.showModal();
+          document.documentElement.classList.add('lightbox-open');
+        });
+      });
+
+      dialog.querySelector('[data-lightbox-close]').addEventListener('click', () => dialog.close());
+      dialog.querySelector('[data-lightbox-prev]').addEventListener('click', () => show(index - 1));
+      dialog.querySelector('[data-lightbox-next]').addEventListener('click', () => show(index + 1));
+
+      dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) dialog.close();
+      });
+
+      dialog.addEventListener('close', () => {
+        document.documentElement.classList.remove('lightbox-open');
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (!dialog.open) return;
+        if (event.key === 'ArrowLeft') show(index - 1);
+        if (event.key === 'ArrowRight') show(index + 1);
+      });
+    })();
+  </script>
+</BaseLayout>

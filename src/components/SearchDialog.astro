@@ -1,0 +1,204 @@
+---
+// 全站搜索：懒加载 /search-index.json，原生 dialog 承载。
+---
+
+<dialog class="search-modal" id="search-modal" aria-label="全站搜索">
+  <div class="search-modal-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 4 4" stroke-linecap="round" />
+    </svg>
+    <input
+      id="search-input"
+      type="search"
+      placeholder="搜索文章、标签、动态…"
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="搜索关键词"
+    />
+    <button class="search-close" id="search-close" type="button" aria-label="关闭搜索">×</button>
+  </div>
+  <div class="search-body">
+    <p class="search-hint" id="search-hint">输入关键词，↑ ↓ 选择，Enter 打开</p>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</dialog>
+
+<script is:inline>
+  (() => {
+    const modal = document.getElementById('search-modal');
+    if (!modal) return;
+
+    const input = document.getElementById('search-input');
+    const resultsEl = document.getElementById('search-results');
+    const hintEl = document.getElementById('search-hint');
+    const closeButton = document.getElementById('search-close');
+
+    let indexPromise = null;
+    let index = null;
+    let results = [];
+    let active = -1;
+    let timer;
+
+    const escapeHtml = (value) =>
+      String(value ?? '').replace(
+        /[&<>"']/g,
+        (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]
+      );
+
+    const highlight = (text, query) => {
+      const safe = escapeHtml(text);
+      if (!query) return safe;
+      const pattern = new RegExp(
+        `(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
+        'gi'
+      );
+      return safe.replace(pattern, '<mark>$1</mark>');
+    };
+
+    const loadIndex = () => {
+      if (!indexPromise) {
+        indexPromise = fetch('/search-index.json')
+          .then((response) => (response.ok ? response.json() : []))
+          .catch(() => []);
+      }
+      return indexPromise;
+    };
+
+    const setActive = (next) => {
+      const links = [...resultsEl.querySelectorAll('.search-result')];
+      if (!links.length) return;
+      active = (next + links.length) % links.length;
+      links.forEach((link, index) => link.classList.toggle('is-active', index === active));
+      links[active].scrollIntoView({ block: 'nearest' });
+    };
+
+    const render = (query) => {
+      const keyword = query.trim().toLowerCase();
+      let list;
+
+      if (!keyword) {
+        list = (index ?? []).filter((item) => item.type === 'post').slice(0, 6);
+        hintEl.textContent = '最近更新';
+      } else {
+        const scored = [];
+        for (const item of index ?? []) {
+          const title = String(item.title ?? '').toLowerCase();
+          const description = String(item.description ?? '').toLowerCase();
+          const tags = (item.tags ?? []).join(' ').toLowerCase();
+          const text = String(item.text ?? '').toLowerCase();
+          let score = 0;
+          if (title.includes(keyword)) score += 12;
+          if (tags.includes(keyword)) score += 6;
+          if (description.includes(keyword)) score += 4;
+          if (text.includes(keyword)) score += 1;
+          if (score > 0) scored.push({ item, score });
+        }
+        scored.sort(
+          (a, b) => b.score - a.score || String(b.item.date).localeCompare(String(a.item.date))
+        );
+        list = scored.slice(0, 20).map((entry) => entry.item);
+        hintEl.textContent = list.length ? `${list.length} 条结果` : '没有找到匹配的内容';
+      }
+
+      results = list;
+      active = -1;
+
+      if (!list.length) {
+        resultsEl.innerHTML = `<div class="search-empty">${keyword ? '换个关键词试试，或者去归档里慢慢翻。' : '搜索索引还在准备中。'}</div>`;
+        return;
+      }
+
+      resultsEl.innerHTML = list
+        .map(
+          (item, index) => `
+          <a class="search-result" href="${escapeHtml(item.url)}" data-index="${index}">
+            <span class="search-result-type ${item.type === 'moment' ? 'is-moment' : ''}">${item.type === 'moment' ? '动态' : '文章'}</span>
+            <span class="search-result-main">
+              <span class="search-result-title">${highlight(item.title, keyword)}</span>
+              <span class="search-result-desc">${highlight(item.description, keyword)}</span>
+            </span>
+            <span class="search-result-meta">${escapeHtml(String(item.date).replace(/-/g, '.'))}</span>
+          </a>`
+        )
+        .join('');
+    };
+
+    const open = async () => {
+      if (!modal.open) modal.showModal();
+      document.documentElement.classList.add('search-open');
+      input.focus();
+      input.select();
+
+      if (!index) {
+        hintEl.textContent = '正在加载搜索索引…';
+        resultsEl.innerHTML = '';
+        index = await loadIndex();
+      }
+      render(input.value);
+    };
+
+    closeButton.addEventListener('click', () => modal.close());
+
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) modal.close();
+    });
+
+    modal.addEventListener('close', () => {
+      document.documentElement.classList.remove('search-open');
+      input.value = '';
+    });
+
+    document.addEventListener('click', (event) => {
+      const trigger = event.target.closest('[data-search-open]');
+      if (!trigger) return;
+      event.preventDefault();
+      open();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      const isTyping =
+        event.target instanceof HTMLElement &&
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName);
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        open();
+        return;
+      }
+
+      if (event.key === '/' && !isTyping && !modal.open) {
+        event.preventDefault();
+        open();
+        return;
+      }
+
+      if (!modal.open) return;
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setActive(active + 1);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setActive(active - 1);
+      } else if (event.key === 'Enter' && active >= 0) {
+        event.preventDefault();
+        resultsEl.querySelectorAll('.search-result')[active]?.click();
+      }
+    });
+
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => render(input.value), 100);
+    });
+
+    resultsEl.addEventListener('mousemove', (event) => {
+      const link = event.target.closest('.search-result');
+      if (!link) return;
+      active = Number(link.dataset.index);
+      resultsEl
+        .querySelectorAll('.search-result')
+        .forEach((item, index) => item.classList.toggle('is-active', index === active));
+    });
+  })();
+</script>

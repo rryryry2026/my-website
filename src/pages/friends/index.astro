@@ -1,0 +1,80 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { site } from '../../config';
+import { friends } from '../../lib/data';
+
+const hostOf = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+};
+---
+
+<BaseLayout
+  title="友链"
+  description="一些喜欢的角落，和一些认真写字的人。"
+>
+  <section class="page-intro container-page">
+    <p class="eyebrow">FRIENDS · 友链</p>
+    <div class="page-intro-grid">
+      <h1 class="page-title">去别人的<br /><em>黄昏里坐坐</em></h1>
+      <div class="page-intro-side">
+        <p class="page-desc">
+          这里收着一些我常去的角落。如果你也有一个安静的小站，欢迎写信来交换。
+        </p>
+        <p class="page-meta">
+          <span>{friends.length} 个角落</span>
+          <span class="meta-dot"></span>
+          <span>欢迎交换</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page friends-section">
+    {friends.length > 0 ? (
+      <div class="friend-grid">
+        {friends.map((friend) => (
+          <a
+            class="friend-card"
+            href={friend.url}
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            {friend.avatar ? (
+              <img
+                class="friend-avatar"
+                src={friend.avatar}
+                alt={`${friend.name} 的头像`}
+                width="96"
+                height="96"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <span class="friend-avatar friend-avatar-fallback" aria-hidden="true">
+                {friend.name.slice(0, 1)}
+              </span>
+            )}
+            <span class="friend-main">
+              <strong>{friend.name}</strong>
+              <span class="friend-desc">{friend.description}</span>
+              <span class="friend-host">{hostOf(friend.url)}</span>
+            </span>
+            <span class="friend-arrow" aria-hidden="true">↗</span>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <p class="empty-state">友链还在慢慢收集中。</p>
+    )}
+
+    <div class="friend-exchange">
+      <p class="eyebrow">SAY HELLO</p>
+      <p>想交换友链的话，写信给我：</p>
+      <a class="text-link" href={`mailto:${site.email}`}>{site.email}</a>
+    </div>
+  </section>
+</BaseLayout>

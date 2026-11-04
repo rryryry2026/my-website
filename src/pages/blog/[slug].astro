@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import Comments from '../../components/Comments.astro';
 import ReadingProgress from '../../components/ReadingProgress.astro';
 import TableOfContents from '../../components/TableOfContents.astro';
 import TulipMark from '../../components/TulipMark.astro';
@@ -11,6 +12,7 @@ import {
   getPostSlug,
   getPublishedPosts,
   getReadingTime,
+  tagHref,
 } from '../../lib/posts';
 
 export async function getStaticPaths() {
@@ -99,7 +101,9 @@ const hasToc = headings.some((heading) => heading.depth >= 2 && heading.depth <=
             <footer class="post-footer">
               {post.data.tags.length > 0 && (
                 <div class="post-tags" aria-label="文章标签">
-                  {post.data.tags.map((tag) => <span>#{tag}</span>)}
+                  {post.data.tags.map((tag) => (
+                    <a href={tagHref(tag)}>#{tag}</a>
+                  ))}
                 </div>
               )}
               <div class="post-signature">
@@ -147,6 +151,8 @@ const hasToc = headings.some((heading) => heading.depth >= 2 && heading.depth <=
           </aside>
         )}
       </div>
+
+      <Comments />
     </div>
   </section>
 </BaseLayout>

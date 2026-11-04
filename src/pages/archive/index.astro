@@ -1,0 +1,62 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatDate, getArchive, getPostSlug, getPublishedPosts } from '../../lib/posts';
+
+const posts = getPublishedPosts(await getCollection('blog'));
+const years = getArchive(posts);
+---
+
+<BaseLayout
+  title="归档"
+  description="所有写下的字，按年份和月份排好。"
+>
+  <section class="page-intro container-page">
+    <p class="eyebrow">ARCHIVE · 归档</p>
+    <div class="page-intro-grid">
+      <h1 class="page-title">把时间<br /><em>摊开来看</em></h1>
+      <div class="page-intro-side">
+        <p class="page-desc">
+          按年份和月份排列的全部文字。有些当时觉得普通的日子，回头看会亮一下。
+        </p>
+        <p class="page-meta">
+          <span>{posts.length} 篇文章</span>
+          <span class="meta-dot"></span>
+          <span>{years.length} 个年份</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page archive-section">
+    {years.length > 0 ? (
+      years.map((year) => (
+        <div class="archive-year">
+          <div class="archive-year-head">
+            <h2>{year.year}</h2>
+            <span>{year.count} 篇</span>
+          </div>
+
+          {year.months.map((month) => (
+            <div class="archive-month">
+              <p class="archive-month-label">{String(month.month).padStart(2, '0')} 月</p>
+              <ul class="archive-list">
+                {month.posts.map((post) => (
+                  <li class="archive-entry">
+                    <time datetime={post.data.pubDate.toISOString()}>
+                      {formatDate(post.data.pubDate)}
+                    </time>
+                    <a href={`/blog/${getPostSlug(post)}/`}>{post.data.title}</a>
+                    <span class="category-chip">{post.data.category}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ))
+    ) : (
+      <p class="empty-state">还没有写下什么。等一场好看的晚霞。</p>
+    )}
+  </section>
+</BaseLayout>

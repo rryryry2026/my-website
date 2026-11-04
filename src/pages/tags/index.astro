@@ -1,0 +1,45 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getAllTags, getPublishedPosts, tagHref } from '../../lib/posts';
+
+const posts = getPublishedPosts(await getCollection('blog'));
+const tags = getAllTags(posts);
+---
+
+<BaseLayout
+  title="标签"
+  description="沿着标签，慢慢走到感兴趣的角落。"
+>
+  <section class="page-intro container-page">
+    <p class="eyebrow">TAGS · 标签</p>
+    <div class="page-intro-grid">
+      <h1 class="page-title">沿着标签<br /><em>慢慢走</em></h1>
+      <div class="page-intro-side">
+        <p class="page-desc">
+          一些反复出现的词，像书架上的索引。顺着它们，可以找到气味相近的文字。
+        </p>
+        <p class="page-meta">
+          <span>{tags.length} 个标签</span>
+          <span class="meta-dot"></span>
+          <span>{posts.length} 篇文章</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page tags-section">
+    {tags.length > 0 ? (
+      <div class="tag-cloud">
+        {tags.map((tag) => (
+          <a class="tag-pill" href={tagHref(tag.name)}>
+            <span>#{tag.name}</span>
+            <em>{tag.count}</em>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <p class="empty-state">标签还没有长出来。</p>
+    )}
+  </section>
+</BaseLayout>

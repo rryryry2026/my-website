@@ -304,6 +304,19 @@ function validateSite(site) {
   if (!site.about || !Array.isArray(site.about.texts) || !Array.isArray(site.about.facts)) {
     throw Object.assign(new Error('关于我文案缺少必要字段'), { status: 400 });
   }
+  if (site.comments) {
+    if (typeof site.comments !== 'object' || Array.isArray(site.comments)) {
+      throw Object.assign(new Error('评论配置格式不正确'), { status: 400 });
+    }
+    for (const key of ['repo', 'repoId', 'category', 'categoryId', 'mapping', 'theme', 'lang']) {
+      if (typeof site.comments[key] !== 'string') {
+        throw Object.assign(new Error(`评论字段 ${key} 必须是文本`), { status: 400 });
+      }
+    }
+    if (typeof site.comments.enabled !== 'boolean') {
+      throw Object.assign(new Error('评论 enabled 必须是布尔值'), { status: 400 });
+    }
+  }
 }
 
 function validatePhotos(photos) {
@@ -323,6 +336,105 @@ function validatePhotos(photos) {
     }
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* 此刻 / 动态 / 友链                                                          */
+/* -------------------------------------------------------------------------- */
+
+const DATA_FILES = {
+  now: path.join(DATA_DIR, 'now.json'),
+  moments: path.join(DATA_DIR, 'moments.json'),
+  friends: path.join(DATA_DIR, 'friends.json'),
+};
+
+const isRemoteOrLocalImage = (value) =>
+  !value ||
+  value.startsWith('/uploads/') ||
+  value.startsWith('/assets/') ||
+  /^https?:\/\//i.test(value);
+
+function validateNow(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw Object.assign(new Error('此刻数据格式不正确'), { status: 400 });
+  }
+  for (const key of ['updatedAt', 'focus', 'location', 'mood', 'reading', 'listening', 'note']) {
+    if (typeof data[key] !== 'string') {
+      throw Object.assign(new Error(`此刻字段 ${key} 必须是文本`), { status: 400 });
+    }
+  }
+  if (!DATE_RE.test(data.updatedAt)) {
+    throw Object.assign(new Error('此刻更新日期格式应为 YYYY-MM-DD'), { status: 400 });
+  }
+}
+
+function validateMoments(data) {
+  if (!Array.isArray(data)) {
+    throw Object.assign(new Error('动态必须是数组'), { status: 400 });
+  }
+  const ids = new Set();
+  for (const moment of data) {
+    if (!moment || typeof moment !== 'object') {
+      throw Object.assign(new Error('动态条目格式不正确'), { status: 400 });
+    }
+    for (const key of ['id', 'date', 'text', 'mood', 'location', 'image']) {
+      if (typeof moment[key] !== 'string') {
+        throw Object.assign(new Error(`动态字段 ${key} 必须是文本`), { status: 400 });
+      }
+    }
+    if (!moment.id.trim() || ids.has(moment.id)) {
+      throw Object.assign(new Error('动态 id 不能为空且不能重复'), { status: 400 });
+    }
+    ids.add(moment.id);
+    if (!DATE_RE.test(moment.date)) {
+      throw Object.assign(new Error('动态日期格式应为 YYYY-MM-DD'), { status: 400 });
+    }
+    if (!moment.text.trim()) {
+      throw Object.assign(new Error('动态内容不能为空'), { status: 400 });
+    }
+    if (!isRemoteOrLocalImage(moment.image)) {
+      throw Object.assign(new Error('动态图片地址不合法'), { status: 400 });
+    }
+  }
+}
+
+function validateFriends(data) {
+  if (!Array.isArray(data)) {
+    throw Object.assign(new Error('友链必须是数组'), { status: 400 });
+  }
+  for (const friend of data) {
+    if (!friend || typeof friend !== 'object') {
+      throw Object.assign(new Error('友链条目格式不正确'), { status: 400 });
+    }
+    for (const key of ['name', 'url', 'description', 'avatar']) {
+      if (typeof friend[key] !== 'string') {
+        throw Object.assign(new Error(`友链字段 ${key} 必须是文本`), { status: 400 });
+      }
+    }
+    if (!friend.name.trim()) {
+      throw Object.assign(new Error('友链名称不能为空'), { status: 400 });
+    }
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(friend.url);
+    } catch {
+      throw Object.assign(new Error('友链地址必须是完整的 http:// 或 https:// 链接'), {
+        status: 400,
+      });
+    }
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      throw Object.assign(new Error('友链地址只支持 http / https'), { status: 400 });
+    }
+    if (!isRemoteOrLocalImage(friend.avatar)) {
+      throw Object.assign(new Error('友链头像地址不合法'), { status: 400 });
+    }
+  }
+}
+
+const DATA_VALIDATORS = {
+  now: validateNow,
+  moments: validateMoments,
+  friends: validateFriends,
+};
 
 /* -------------------------------------------------------------------------- */
 /* 媒体                                                                        */
@@ -663,6 +775,27 @@ async function handleApi(req, res, url) {
     await writeJsonFile(SITE_FILE, input.site);
     await writeJsonFile(PHOTOS_FILE, input.photos);
     return json(res, 200, { ok: true });
+  }
+
+  const dataMatch = pathname.match(/^\/api\/data\/(now|moments|friends)$/);
+  if (dataMatch) {
+    const name = dataMatch[1];
+    const file = DATA_FILES[name];
+
+    if (method === 'GET') {
+      return json(res, 200, {
+        name,
+        data: await readJsonFile(file, name === 'now' ? {} : []),
+      });
+    }
+
+    if (method === 'PUT') {
+      const input = await readJson(req, 1024 * 1024);
+      const data = input?.data;
+      DATA_VALIDATORS[name](data);
+      await writeJsonFile(file, data);
+      return json(res, 200, { ok: true });
+    }
   }
 
   if (pathname === '/api/tags' && method === 'GET') {

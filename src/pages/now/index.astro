@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { now } from '../../lib/data';
+import { formatDate } from '../../lib/posts';
+
+const cards = [
+  { label: '最近在做', value: now.focus, wide: true },
+  { label: '坐标', value: now.location },
+  { label: '心情', value: now.mood },
+  { label: '在读', value: now.reading },
+  { label: '在听', value: now.listening },
+];
+---
+
+<BaseLayout
+  title="此刻"
+  description="我的近况、正在做的事，以及此刻的心情。"
+>
+  <section class="page-intro container-page">
+    <p class="eyebrow">NOW · 此时此刻</p>
+    <div class="page-intro-grid">
+      <h1 class="page-title">此刻<br /><em>在这里</em></h1>
+      <div class="page-intro-side">
+        <p class="page-desc">
+          一个会慢慢更新的近况页面。写下来的时候，日子刚好是这个样子。
+        </p>
+        <p class="page-meta">
+          <span>更新于 {formatDate(new Date(now.updatedAt))}</span>
+          <span class="meta-dot"></span>
+          <span>不定期更新</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page now-section">
+    <div class="now-page-grid">
+      {cards.map((card) => (
+        <article class:list={['now-card', card.wide && 'now-card-wide']}>
+          <p class="now-label">{card.label}</p>
+          <p class="now-value">{card.value}</p>
+        </article>
+      ))}
+
+      <article class="now-note glass now-card-wide">
+        <p class="eyebrow">A SMALL NOTE</p>
+        <p>{now.note}</p>
+        <span class="now-stamp">此刻手记 · {formatDate(new Date(now.updatedAt))}</span>
+      </article>
+    </div>
+  </section>
+</BaseLayout>

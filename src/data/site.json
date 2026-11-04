@@ -24,6 +24,16 @@
       "icon": "mail"
     }
   ],
+  "comments": {
+    "enabled": false,
+    "repo": "rryryry2026/my-website",
+    "repoId": "",
+    "category": "Announcements",
+    "categoryId": "",
+    "mapping": "pathname",
+    "theme": "transparent_dark",
+    "lang": "zh-CN"
+  },
   "home": {
     "eyebrow": "TULIP LANE · 黄昏来信",
     "pretitle": "我的",

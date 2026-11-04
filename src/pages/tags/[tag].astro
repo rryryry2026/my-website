@@ -1,0 +1,61 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { getAllTags, getPostsByTag, getPublishedPosts, tagHref } from '../../lib/posts';
+
+export async function getStaticPaths() {
+  const posts = getPublishedPosts(await getCollection('blog'));
+  return getAllTags(posts).map((tag) => ({
+    params: { tag: tag.name },
+    props: { tag: tag.name },
+  }));
+}
+
+const rawTag = Astro.params.tag ?? '';
+let tag = rawTag;
+try {
+  tag = decodeURIComponent(rawTag);
+} catch {
+  tag = rawTag;
+}
+
+const posts = getPostsByTag(
+  getPublishedPosts(await getCollection('blog')),
+  tag
+);
+---
+
+<BaseLayout
+  title={`#${tag}`}
+  description={`关于「${tag}」的文章和日常。`}
+>
+  <section class="page-intro container-page">
+    <p class="eyebrow">TAG · {tag}</p>
+    <div class="page-intro-grid">
+      <h1 class="page-title">关于<br /><em>#{tag}</em></h1>
+      <div class="page-intro-side">
+        <p class="page-desc">
+          所有带着这个标签的文字，按时间从新到旧排好。
+        </p>
+        <p class="page-meta">
+          <span>{posts.length} 篇文章</span>
+          <span class="meta-dot"></span>
+          <a class="meta-link" href="/tags/">全部标签 →</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page section-bottom">
+    {posts.length > 0 ? (
+      <div class="post-grid post-grid-blog">
+        {posts.map((post, index) => <PostCard post={post} index={index} />)}
+      </div>
+    ) : (
+      <p class="empty-state">
+        这个标签下还没有文章。<a class="text-link" href="/tags/">去看看别的标签</a>
+      </p>
+    )}
+  </section>
+</BaseLayout>

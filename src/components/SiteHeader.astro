@@ -38,6 +38,13 @@ function isActive(href: string): boolean {
       </nav>
 
       <div class="header-actions">
+        <button class="header-search" type="button" data-search-open aria-label="搜索全站" title="搜索（Ctrl+K）">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5" />
+            <path d="m16 16 4 4" stroke-linecap="round" />
+          </svg>
+        </button>
+
         <a class="header-mail" href={`mailto:${site.email}`}>
           <span class="header-mail-dot"></span>
           写信给我
@@ -70,6 +77,10 @@ function isActive(href: string): boolean {
           </a>
         ))}
       </nav>
+      <button class="mobile-nav-link mobile-search-link" type="button" data-search-open>
+        <span>搜索全站</span>
+        <span class="mobile-nav-arrow" aria-hidden="true">⌕</span>
+      </button>
       <a class="mobile-mail" href={`mailto:${site.email}`}>写信给我 · {site.email}</a>
     </div>
   </div>
@@ -107,6 +118,10 @@ function isActive(href: string): boolean {
 
     menu.querySelectorAll('a').forEach((link) => {
       link.addEventListener('click', () => setOpen(false));
+    });
+
+    menu.querySelectorAll('[data-search-open]').forEach((button) => {
+      button.addEventListener('click', () => setOpen(false));
     });
 
     document.addEventListener('keydown', (event) => {
