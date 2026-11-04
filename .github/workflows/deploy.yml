@@ -8,6 +8,9 @@ on:
 permissions:
   contents: read
 
+env:
+  DEPLOY_TARGET: /opt/my-website/dist
+
 concurrency:
   group: deploy-site
   cancel-in-progress: true
@@ -37,11 +40,10 @@ jobs:
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
           missing=0
-          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_PATH DEPLOY_SSH_KEY; do
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY; do
             if [ -z "${!name}" ]; then
               echo "::error::缺少 GitHub Secret: $name"
               missing=1
@@ -71,12 +73,22 @@ jobs:
           fi
           chmod 600 ~/.ssh/known_hosts
 
+      - name: Check remote target
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          PORT="${DEPLOY_PORT:-22}"
+          ssh -i ~/.ssh/deploy_key -p "$PORT" -o BatchMode=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "id; pwd; mkdir -p '$DEPLOY_TARGET'; ls -ld /opt /opt/my-website '$DEPLOY_TARGET'"
+
       - name: Deploy dist with rsync
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-          DEPLOY_TARGET: ${{ secrets.DEPLOY_PATH }}
         run: |
           PORT="${DEPLOY_PORT:-22}"
           rsync -az --delete-after --chmod=D755,F644 --chown=www-data:www-data \
@@ -90,7 +102,6 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-          DEPLOY_TARGET: ${{ secrets.DEPLOY_PATH }}
         run: |
           PORT="${DEPLOY_PORT:-22}"
           ssh -i ~/.ssh/deploy_key -p "$PORT" -o BatchMode=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=yes \
