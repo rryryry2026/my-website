@@ -5,6 +5,7 @@ import ReadingProgress from '../../components/ReadingProgress.astro';
 import TableOfContents from '../../components/TableOfContents.astro';
 import TulipMark from '../../components/TulipMark.astro';
 import type { Post } from '../../lib/posts';
+import { getCategoryMeta } from '../../config';
 import {
   formatDate,
   getPostSlug,
@@ -27,6 +28,7 @@ interface Props {
 }
 
 const { post, allPosts } = Astro.props;
+const category = getCategoryMeta(post.data.category);
 const { Content, headings } = await render(post);
 const readingMinutes = getReadingTime(post.body ?? '');
 const currentIndex = allPosts.findIndex((item) => item.id === post.id);
@@ -40,11 +42,11 @@ const hasToc = headings.some((heading) => heading.depth >= 2 && heading.depth <=
 
   <section class="post-page">
     <div class="container-page">
-      <a class="back-link" href="/blog/">
+      <a class="back-link" href={category.href}>
         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <path d="M16 10H4m5-5-5 5 5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
-        回到所有文章
+        回到{category.label}
       </a>
 
       <div class="post-layout">

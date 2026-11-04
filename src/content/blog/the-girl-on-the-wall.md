@@ -2,7 +2,7 @@
 title: 坐在墙头的女孩
 description: 她总是坐在旧砖墙的顶端，裙摆垂下来，脚边放着晚风和一颗还没拆开的糖。那天我问她，你在等什么？
 pubDate: 2026-10-18
-category: 故事
+category: 生活日常
 tags:
   - 肖艾
   - 青春

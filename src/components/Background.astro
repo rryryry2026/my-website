@@ -1,12 +1,19 @@
 ---
 // 背景视频与兜底图。移动端 / 省流量 / 减少动态效果时自动切换为静态图。
+interface Props {
+  /** 首页开场期间先不启动背景视频，等开场的视频结束后再播放 */
+  defer?: boolean;
+}
+
+const { defer = false } = Astro.props;
 ---
 
 <div class="site-background" aria-hidden="true">
   <video
     id="site-bg-video"
     class="site-bg-video"
-    autoplay
+    autoplay={!defer}
+    data-defer-play={defer ? 'true' : undefined}
     muted
     loop
     playsinline
@@ -68,6 +75,10 @@
     }
 
     video.addEventListener('error', useStatic, { once: true });
+
+    // 开场遮罩还在时由 IntroSplash 负责启动，避免 play/pause 竞争触发兜底。
+    if (video.dataset.deferPlay === 'true') return;
+
     video.play().catch(useStatic);
 
     document.addEventListener('visibilitychange', () => {

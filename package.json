@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
+    "admin": "node admin/server.mjs",
+    "publish": "node scripts/publish.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"

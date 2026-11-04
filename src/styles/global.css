@@ -186,12 +186,143 @@ html.bg-static .site-bg-poster {
   display: block;
 }
 
+/* --------------------------------------------------------------------------
+   Intro splash（首页开场，播放背景视频的后 5 秒）
+   -------------------------------------------------------------------------- */
+
+html.has-intro {
+  overflow: hidden;
+}
+
+html.has-intro .site-shell {
+  opacity: 0;
+}
+
+.intro-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  overflow: hidden;
+  background: #120705;
+  opacity: 1;
+  transition: opacity 0.8s var(--ease-soft);
+}
+
+.intro-splash.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.intro-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #120705;
+  object-fit: cover;
+  object-position: center 42%;
+}
+
+.intro-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(18, 7, 5, 0.28) 0%,
+      transparent 30%,
+      transparent 62%,
+      rgba(18, 7, 5, 0.72) 100%
+    ),
+    radial-gradient(120% 90% at 50% 50%, transparent 48%, rgba(18, 7, 5, 0.36) 100%);
+  pointer-events: none;
+}
+
+.intro-ui {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: clamp(1.1rem, 4vw, 2.4rem);
+}
+
+.intro-caption {
+  margin: 0;
+  padding-bottom: 0.15rem;
+  color: rgba(255, 236, 214, 0.55);
+  font-size: 0.6rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+}
+
+.intro-skip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: rgba(26, 11, 7, 0.42);
+  color: rgba(255, 243, 227, 0.82);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+  opacity: 0;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition:
+    border-color 0.25s var(--ease-soft),
+    background 0.25s var(--ease-soft);
+  animation: intro-ui-in 0.7s var(--ease-soft) 0.9s forwards;
+}
+
+.intro-skip:hover {
+  border-color: rgba(255, 211, 169, 0.5);
+  background: rgba(58, 22, 16, 0.6);
+}
+
+.intro-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  height: 2px;
+  background: rgba(255, 235, 215, 0.1);
+}
+
+.intro-progress span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-sunset), var(--color-gold));
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: intro-progress 5s linear forwards;
+}
+
+@keyframes intro-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes intro-ui-in {
+  to {
+    opacity: 1;
+  }
+}
+
 .site-shell {
   position: relative;
   z-index: 10;
   display: flex;
   min-height: 100svh;
   flex-direction: column;
+  transition: opacity 0.9s var(--ease-soft);
 }
 
 .container-page {
@@ -1315,10 +1446,17 @@ html.bg-static .site-bg-poster {
 }
 
 .photo-caption-title {
+  flex-shrink: 0;
   color: #fff1e1;
   font-family: var(--font-serif);
   font-size: 1rem;
   letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.photo-caption > span:last-child {
+  min-width: 0;
+  text-align: right;
 }
 
 .photo-card:hover img {

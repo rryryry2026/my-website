@@ -1,0 +1,144 @@
+---
+// 首页开场：播放背景视频的后 5 秒，播完再淡出进入正文。
+// 无 JS 时用 noscript 直接放行；减少动态效果 / 省流量 / 已看过则立即跳过。
+---
+
+<div class="intro-splash" id="intro-splash">
+  <video
+    class="intro-video"
+    src="/assets/intro.mp4"
+    poster="/assets/intro-poster.jpg"
+    muted
+    playsinline
+    preload="auto"
+    disablepictureinpicture
+    tabindex="-1"
+  ></video>
+
+  <div class="intro-vignette" aria-hidden="true"></div>
+
+  <div class="intro-ui">
+    <p class="intro-caption">TULIP LANE · 黄昏来信</p>
+    <button class="intro-skip" type="button">
+      跳过
+      <span aria-hidden="true">→</span>
+    </button>
+  </div>
+
+  <div class="intro-progress" aria-hidden="true"><span></span></div>
+</div>
+
+<noscript>
+  <style>
+    .intro-splash {
+      display: none !important;
+    }
+
+    html.has-intro {
+      overflow: auto !important;
+    }
+
+    html.has-intro .site-shell {
+      opacity: 1 !important;
+    }
+  </style>
+</noscript>
+
+<script is:inline>
+  (() => {
+    const splash = document.getElementById('intro-splash');
+    if (!splash) return;
+
+    const root = document.documentElement;
+    const shell = document.querySelector('.site-shell');
+    const video = splash.querySelector('.intro-video');
+    const skip = splash.querySelector('.intro-skip');
+    const background = document.getElementById('site-bg-video');
+
+    let finished = false;
+    let safetyTimer;
+
+    const dismiss = (immediate) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(safetyTimer);
+
+      try {
+        sessionStorage.setItem('tulip-intro-seen', '1');
+      } catch (error) {
+        /* 隐私模式下无法写入，忽略 */
+      }
+
+      if (shell) shell.removeAttribute('inert');
+      root.classList.remove('has-intro');
+
+      // 开场结束后，背景视频从头开始循环。
+      if (background && !root.classList.contains('bg-static')) {
+        try {
+          // 元数据还没加载时写 currentTime 会抛错，此时直接从 0 播放即可。
+          if (background.readyState >= 1) background.currentTime = 0;
+        } catch (error) {
+          /* 忽略 */
+        }
+        background.play().catch(() => {});
+      }
+
+      const remove = () => {
+        video.pause();
+        splash.remove();
+      };
+
+      if (immediate) {
+        remove();
+        return;
+      }
+
+      splash.classList.add('is-leaving');
+      splash.addEventListener('transitionend', remove, { once: true });
+      setTimeout(remove, 1000);
+    };
+
+    // 是否还要播放开场
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem('tulip-intro-seen') === '1';
+    } catch (error) {
+      /* 忽略 */
+    }
+
+    const forced = new URLSearchParams(window.location.search).has('intro');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const connection = navigator.connection;
+    const saveData = Boolean(
+      connection &&
+        (connection.saveData || ['slow-2g', '2g'].includes(connection.effectiveType))
+    );
+
+    if ((seen && !forced) || reduceMotion || saveData) {
+      dismiss(true);
+      return;
+    }
+
+    // 开场期间先停掉背景视频，避免同时解码两路。
+    if (background) background.pause();
+    if (shell) shell.setAttribute('inert', '');
+
+    const fail = () => dismiss(true);
+
+    video.addEventListener('ended', () => dismiss(false), { once: true });
+    video.addEventListener('error', fail, { once: true });
+    skip.addEventListener('click', () => dismiss(false));
+
+    const onKeydown = (event) => {
+      if (event.key !== 'Escape') return;
+      document.removeEventListener('keydown', onKeydown);
+      dismiss(false);
+    };
+    document.addEventListener('keydown', onKeydown);
+
+    // 兜底：最长 9 秒后无论如何进入正文。
+    safetyTimer = setTimeout(() => dismiss(true), 9000);
+
+    video.play().catch(fail);
+  })();
+</script>

@@ -2,6 +2,7 @@
 import { site } from '../config';
 import '../styles/global.css';
 import Background from '../components/Background.astro';
+import IntroSplash from '../components/IntroSplash.astro';
 import BaseHead from '../components/BaseHead.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
@@ -12,6 +13,8 @@ interface Props {
   description?: string;
   image?: string;
   pageClass?: string;
+  /** 是否在进入页面时播放 5 秒开场视频（仅首页使用） */
+  intro?: boolean;
 }
 
 const {
@@ -19,20 +22,21 @@ const {
   description = site.description,
   image,
   pageClass = '',
+  intro = false,
 } = Astro.props;
 
 const pageTitle = title ? `${title} · ${site.title}` : site.fullTitle;
 ---
 
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" class={intro ? 'has-intro' : undefined}>
   <head>
     <BaseHead title={pageTitle} description={description} image={image} />
   </head>
   <body class={pageClass}>
     <a class="skip-link" href="#main-content">跳到主要内容</a>
 
-    <Background />
+    <Background defer={intro} />
 
     <div class="site-shell">
       <SiteHeader />
@@ -42,5 +46,7 @@ const pageTitle = title ? `${title} · ${site.title}` : site.fullTitle;
       <SiteFooter />
       <MusicPlayer />
     </div>
+
+    {intro && <IntroSplash />}
   </body>
 </html>

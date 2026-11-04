@@ -1,0 +1,20 @@
+[
+  {
+    "src": "/assets/gallery/frame-1.jpg",
+    "alt": "傍晚的旧巷，屋檐与亮着灯的小屋",
+    "title": "灯亮起来的时候",
+    "note": "风从巷口吹进来，屋里刚好飘出饭菜的香气。"
+  },
+  {
+    "src": "/assets/gallery/frame-2.jpg",
+    "alt": "少女坐在砖墙上看远处的晚霞",
+    "title": "墙头有风",
+    "note": "她什么也没说，只把脚边的晚霞分了一半给我。"
+  },
+  {
+    "src": "/assets/gallery/frame-3.jpg",
+    "alt": "橙红色天空与安静的屋檐",
+    "title": "日落以后",
+    "note": "天还没有暗透，灯也还没有全部亮起来。"
+  }
+]

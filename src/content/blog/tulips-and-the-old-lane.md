@@ -2,7 +2,7 @@
 title: 郁金香与旧巷
 description: 花店最后三枝郁金香，被我抱回了家。它们没有开在春天里，却刚好赶上了秋天的一场晚霞。
 pubDate: 2026-09-21
-category: 随笔
+category: 生活日常
 tags:
   - 郁金香
   - 旧巷

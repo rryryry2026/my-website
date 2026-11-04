@@ -3,6 +3,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import TulipMark from '../components/TulipMark.astro';
 import SocialIcon from '../components/SocialIcon.astro';
 import { site } from '../config';
+
+const { about } = site;
 ---
 
 <BaseLayout
@@ -12,11 +14,9 @@ import { site } from '../config';
   <section class="page-intro container-page">
     <p class="eyebrow">ABOUT · 关于</p>
     <div class="page-intro-grid">
-      <h1 class="page-title">嗨，<br /><em>很高兴遇见你</em></h1>
+      <h1 class="page-title">{about.title}<br /><em>{about.titleAccent}</em></h1>
       <div class="page-intro-side">
-        <p class="page-desc">
-          这里不是一本完整的自传，更像一扇半开着的窗。风经过的时候，你可以顺便看看里面的光。
-        </p>
+        <p class="page-desc">{about.description}</p>
       </div>
     </div>
   </section>
@@ -26,14 +26,14 @@ import { site } from '../config';
       <div class="about-photo-wrap">
         <figure class="about-photo">
           <img
-            src="/assets/gallery/frame-2.jpg"
-            alt="坐在墙头看晚霞的少女"
+            src={about.photo.src}
+            alt={about.photo.alt}
             width="1280"
             height="720"
             loading="eager"
             decoding="async"
           />
-          <figcaption>某个不想回家的黄昏</figcaption>
+          <figcaption>{about.photo.caption}</figcaption>
         </figure>
         <span class="about-photo-tape" aria-hidden="true"></span>
       </div>
@@ -45,26 +45,15 @@ import { site } from '../config';
         <p class="eyebrow">NICE TO MEET YOU</p>
         <h2 class="about-title">我是{site.author}</h2>
         <p class="about-lead">{site.intro}</p>
-        <p class="about-text">
-          白天是普通人，傍晚以后会变成黄昏的收集者。喜欢坐在能看见天空的地方，听旧歌，写一点不值一提的小事。偶尔拍照，偶尔什么也不做。
-        </p>
-        <p class="about-text">
-          这个博客叫「{site.title}」。名字来自一个关于屋顶、晚风和郁金香的念头。希望这里的每个字，都能像巷口那盏灯一样，不刺眼，但刚好照亮回家的路。
-        </p>
+        {about.texts.map((text) => <p class="about-text">{text}</p>)}
 
         <dl class="about-facts">
-          <div>
-            <dt>坐标</dt>
-            <dd>{site.location}</dd>
-          </div>
-          <div>
-            <dt>最近在做</dt>
-            <dd>学着把日子过慢</dd>
-          </div>
-          <div>
-            <dt>喜欢</dt>
-            <dd>黄昏 · 旧巷 · 郁金香</dd>
-          </div>
+          {about.facts.map((fact) => (
+            <div>
+              <dt>{fact.label}</dt>
+              <dd>{fact.value}</dd>
+            </div>
+          ))}
         </dl>
 
         <div class="about-contact">
@@ -96,10 +85,8 @@ import { site } from '../config';
   <section class="container-page about-section">
     <div class="about-site-note">
       <p class="eyebrow">ABOUT THIS CORNER</p>
-      <p class="about-site-quote">“一个用来收藏黄昏、偶尔自言自语的角落。”</p>
-      <p class="about-site-text">
-        本站使用 Astro 与 Tailwind CSS 构建，是一个安静的静态站点。没有算法，没有信息流，只有按时间排列的文字。背景里的风和晚霞，来自一段只有十秒的傍晚。
-      </p>
+      <p class="about-site-quote">{about.siteQuote}</p>
+      <p class="about-site-text">{about.siteText}</p>
     </div>
   </section>
 </BaseLayout>

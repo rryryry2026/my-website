@@ -2,7 +2,7 @@
 title: 给自己搭一个安静的角落
 description: 没有算法，没有信息流，只有一篇一篇按时间排好的文字。关于这个博客，以及为什么我仍然想拥有一个自己的小角落。
 pubDate: 2026-10-02
-category: 生活
+category: 技术文章
 tags:
   - 独立博客
   - Astro

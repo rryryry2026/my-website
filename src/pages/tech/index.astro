@@ -1,0 +1,43 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { getPostsByCategory, getPublishedPosts } from '../../lib/posts';
+
+const posts = getPostsByCategory(
+  getPublishedPosts(await getCollection('blog')),
+  '技术文章'
+);
+---
+
+<BaseLayout
+  title="技术文章"
+  description="关于代码、工具和踩过的坑。尽量写清楚为什么，而不只是怎么做。"
+>
+  <section class="page-intro container-page">
+    <p class="eyebrow">TECH NOTES · 技术</p>
+    <div class="page-intro-grid">
+      <h1 class="page-title">把复杂的事<br /><em>写成清楚的句子</em></h1>
+      <div class="page-intro-side">
+        <p class="page-desc">
+          关于代码、工具和踩过的坑。尽量写清楚为什么，而不只是怎么做。
+        </p>
+        <p class="page-meta">
+          <span>{posts.length} 篇笔记</span>
+          <span class="meta-dot"></span>
+          <span>持续更新中</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-page section-bottom">
+    {posts.length > 0 ? (
+      <div class="post-grid post-grid-blog">
+        {posts.map((post, index) => <PostCard post={post} index={index} />)}
+      </div>
+    ) : (
+      <p class="empty-state">技术笔记还在整理中，晚一点再来看看。</p>
+    )}
+  </section>
+</BaseLayout>

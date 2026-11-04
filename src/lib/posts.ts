@@ -13,6 +13,10 @@ export function getPublishedPosts(posts: Post[]): Post[] {
     .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 }
 
+export function getPostsByCategory(posts: Post[], category: string): Post[] {
+  return posts.filter((post) => post.data.category === category);
+}
+
 export function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('zh-CN', {
     year: 'numeric',

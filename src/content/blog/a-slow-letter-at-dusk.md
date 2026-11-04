@@ -2,7 +2,7 @@
 title: 黄昏是一封很慢的信
 description: 六点以后，巷子会变得柔软。灯一盏一盏亮起来，白天没有说完的话，终于有了可以落下的地方。
 pubDate: 2026-10-28
-category: 随笔
+category: 生活日常
 tags:
   - 黄昏
   - 日常

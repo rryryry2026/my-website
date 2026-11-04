@@ -1,116 +1,21 @@
 ---
-import { getCollection } from 'astro:content';
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { formatDate, getPostSlug, getPublishedPosts } from '../lib/posts';
-
-const posts = getPublishedPosts(await getCollection('blog')).slice(0, 4);
-
-const photos = [
-  {
-    src: '/assets/gallery/frame-1.jpg',
-    alt: '傍晚的旧巷，屋檐与亮着灯的小屋',
-    title: '灯亮起来的时候',
-    note: '风从巷口吹进来，屋里刚好飘出饭菜的香气。',
-    class: 'photo-tall',
-  },
-  {
-    src: '/assets/gallery/frame-2.jpg',
-    alt: '少女坐在砖墙上看远处的晚霞',
-    title: '墙头有风',
-    note: '她什么也没说，只把脚边的晚霞分了一半给我。',
-    class: '',
-  },
-  {
-    src: '/assets/gallery/frame-3.jpg',
-    alt: '橙红色天空与安静的屋檐',
-    title: '日落以后',
-    note: '天还没有暗透，灯也还没有全部亮起。',
-    class: '',
-  },
-];
+// 「随笔 / 摄影」已并入「生活日常」，保留旧地址做跳转。
 ---
 
-<BaseLayout
-  title="随笔 / 摄影"
-  description="一些散落在日常里的句子，还有一些被黄昏留下来的瞬间。"
->
-  <section class="page-intro container-page">
-    <p class="eyebrow">NOTES & PHOTOGRAPHS · 拾光</p>
-    <div class="page-intro-grid">
-      <h1 class="page-title">把光<br /><em>留在纸上</em></h1>
-      <div class="page-intro-side">
-        <p class="page-desc">
-          写一些不成篇的句子，拍一些没有目的的风景。它们不一定有意义，但那一刻，确实很好看。
-        </p>
-        <p class="page-meta">
-          <span>{photos.length} 个瞬间</span>
-          <span class="meta-dot"></span>
-          <span>持续更新中</span>
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <section class="container-page notes-section">
-    <div class="section-head">
-      <div>
-        <p class="eyebrow">MARGINALIA</p>
-        <h2 class="section-title">日常边角</h2>
-      </div>
-      <span class="section-note">一些比文章更轻的东西</span>
-    </div>
-
-    <div class="notes-list">
-      {posts.map((post, index) => (
-        <a class="note-row" href={`/blog/${getPostSlug(post)}/`}>
-          <span class="note-index" aria-hidden="true">0{index + 1}</span>
-          <span class="note-main">
-            <span class="note-title">{post.data.title}</span>
-            <span class="note-desc">{post.data.description}</span>
-          </span>
-          <span class="note-side">
-            <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
-            <span class="note-arrow" aria-hidden="true">↗</span>
-          </span>
-        </a>
-      ))}
-    </div>
-  </section>
-
-  <section class="container-page notes-section">
-    <div class="section-head">
-      <div>
-        <p class="eyebrow">DUSK GALLERY</p>
-        <h2 class="section-title">拾光集</h2>
-      </div>
-      <span class="section-note">镜头替我记住的黄昏</span>
-    </div>
-
-    <div class="gallery-grid">
-      {photos.map((photo, index) => (
-        <figure class:list={['gallery-item', photo.class]}>
-          <img
-            src={photo.src}
-            alt={photo.alt}
-            width="1280"
-            height="720"
-            loading={index > 0 ? 'lazy' : 'eager'}
-            decoding="async"
-          />
-          <figcaption>
-            <span class="gallery-title">{photo.title}</span>
-            <span class="gallery-note">{photo.note}</span>
-          </figcaption>
-        </figure>
-      ))}
-    </div>
-  </section>
-
-  <section class="container-page notes-section">
-    <div class="quote-panel quote-panel-small">
-      <span class="quote-mark" aria-hidden="true">“</span>
-      <p>日子不必每天发光，<br class="hidden sm:block" />只要偶尔被黄昏照亮。</p>
-      <span class="quote-source">— 写在某页手帐边上</span>
-    </div>
-  </section>
-</BaseLayout>
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="refresh" content="0; url=/life/" />
+    <link rel="canonical" href="/life/" />
+    <title>生活日常 · 晚巷</title>
+    <script is:inline>
+      window.location.replace('/life/');
+    </script>
+  </head>
+  <body>
+    <p><a href="/life/">前往生活日常</a></p>
+  </body>
+</html>
