@@ -13,6 +13,9 @@ const year = getYear();
 
 const gallery = photos.slice(0, 3);
 const { home } = site;
+const hasNow = Boolean(
+  now.focus || now.location || now.mood || now.reading || now.listening || now.note
+);
 ---
 
 <BaseLayout intro>
@@ -101,41 +104,43 @@ const { home } = site;
     </div>
   </section>
 
-  <section class="home-section container-page">
-    <div class="section-head">
-      <div>
-        <p class="eyebrow">RIGHT NOW</p>
-        <h2 class="section-title">此刻</h2>
+  {hasNow && (
+    <section class="home-section container-page">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">RIGHT NOW</p>
+          <h2 class="section-title">此刻</h2>
+        </div>
+        <a class="section-link" href="/now/">
+          看看我的此刻
+          <span aria-hidden="true">→</span>
+        </a>
       </div>
-      <a class="section-link" href="/now/">
-        看看我的此刻
-        <span aria-hidden="true">→</span>
-      </a>
-    </div>
 
-    <div class="now-grid">
-      <article class="now-card now-card-wide">
-        <p class="now-label">最近在做</p>
-        <p class="now-value">{now.focus}</p>
-      </article>
-      <article class="now-card">
-        <p class="now-label">坐标</p>
-        <p class="now-value">{now.location}</p>
-      </article>
-      <article class="now-card">
-        <p class="now-label">心情</p>
-        <p class="now-value">{now.mood}</p>
-      </article>
-      <article class="now-card">
-        <p class="now-label">在读</p>
-        <p class="now-value">{now.reading}</p>
-      </article>
-      <article class="now-card">
-        <p class="now-label">在听</p>
-        <p class="now-value">{now.listening}</p>
-      </article>
-    </div>
-  </section>
+      <div class="now-grid">
+        <article class="now-card now-card-wide">
+          <p class="now-label">最近在做</p>
+          <p class="now-value">{now.focus}</p>
+        </article>
+        <article class="now-card">
+          <p class="now-label">坐标</p>
+          <p class="now-value">{now.location}</p>
+        </article>
+        <article class="now-card">
+          <p class="now-label">心情</p>
+          <p class="now-value">{now.mood}</p>
+        </article>
+        <article class="now-card">
+          <p class="now-label">在读</p>
+          <p class="now-value">{now.reading}</p>
+        </article>
+        <article class="now-card">
+          <p class="now-label">在听</p>
+          <p class="now-value">{now.listening}</p>
+        </article>
+      </div>
+    </section>
+  )}
 
   <section class="home-section container-page">
     <div class="section-head">
@@ -158,28 +163,30 @@ const { home } = site;
     )}
   </section>
 
-  <section class="home-section container-page">
-    <div class="section-head">
-      <div>
-        <p class="eyebrow">MOMENTS</p>
-        <h2 class="section-title">近日动态</h2>
-      </div>
-      <a class="section-link" href="/moments/">
-        全部动态
-        <span aria-hidden="true">→</span>
-      </a>
-    </div>
-
-    <div class="home-moments">
-      {moments.slice(0, 3).map((moment) => (
-        <a class="home-moment" href={`/moments/#${moment.id}`}>
-          <time datetime={moment.date}>{formatDate(new Date(moment.date))}</time>
-          <p>{moment.text}</p>
-          <span>{[moment.mood, moment.location].filter(Boolean).join(' · ')}</span>
+  {moments.length > 0 && (
+    <section class="home-section container-page">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">MOMENTS</p>
+          <h2 class="section-title">近日动态</h2>
+        </div>
+        <a class="section-link" href="/moments/">
+          全部动态
+          <span aria-hidden="true">→</span>
         </a>
-      ))}
-    </div>
-  </section>
+      </div>
+
+      <div class="home-moments">
+        {moments.slice(0, 3).map((moment) => (
+          <a class="home-moment" href={`/moments/#${moment.id}`}>
+            <time datetime={moment.date}>{formatDate(new Date(moment.date))}</time>
+            <p>{moment.text}</p>
+            <span>{[moment.mood, moment.location].filter(Boolean).join(' · ')}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
 
   <section class="home-section">
     <div class="container-page">
@@ -198,38 +205,40 @@ const { home } = site;
     </div>
   </section>
 
-  <section class="home-section container-page">
-    <div class="section-head">
-      <div>
-        <p class="eyebrow">FRAGMENTS OF DUSK</p>
-        <h2 class="section-title">黄昏切片</h2>
-      </div>
-      <a class="section-link" href="/gallery/">
-        去看全部照片
-        <span aria-hidden="true">→</span>
-      </a>
-    </div>
-
-    <div class="photo-strip">
-      {gallery.map((photo) => (
-        <a class="photo-card" href="/gallery/">
-          <img
-            src={photo.src}
-            alt={photo.alt}
-            width="1280"
-            height="720"
-            loading="lazy"
-            decoding="async"
-          />
-          <span class="photo-shade" aria-hidden="true"></span>
-          <span class="photo-caption">
-            <span class="photo-caption-title">{photo.title}</span>
-            <span>{photo.note}</span>
-          </span>
+  {gallery.length > 0 && (
+    <section class="home-section container-page">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">FRAGMENTS OF DUSK</p>
+          <h2 class="section-title">黄昏切片</h2>
+        </div>
+        <a class="section-link" href="/gallery/">
+          去看全部照片
+          <span aria-hidden="true">→</span>
         </a>
-      ))}
-    </div>
-  </section>
+      </div>
+
+      <div class="photo-strip">
+        {gallery.map((photo) => (
+          <a class="photo-card" href="/gallery/">
+            <img
+              src={photo.src}
+              alt={photo.alt}
+              width="1280"
+              height="720"
+              loading="lazy"
+              decoding="async"
+            />
+            <span class="photo-shade" aria-hidden="true"></span>
+            <span class="photo-caption">
+              <span class="photo-caption-title">{photo.title}</span>
+              <span>{photo.note}</span>
+            </span>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
 
   <section class="home-section container-page">
     <div class="section-head">

@@ -10,6 +10,11 @@ const cards = [
   { label: '在读', value: now.reading },
   { label: '在听', value: now.listening },
 ];
+
+const hasNow = Boolean(
+  now.focus || now.location || now.mood || now.reading || now.listening || now.note
+);
+const updatedAt = now.updatedAt ? formatDate(new Date(now.updatedAt)) : '';
 ---
 
 <BaseLayout
@@ -25,7 +30,7 @@ const cards = [
           一个会慢慢更新的近况页面。写下来的时候，日子刚好是这个样子。
         </p>
         <p class="page-meta">
-          <span>更新于 {formatDate(new Date(now.updatedAt))}</span>
+          <span>{updatedAt ? `更新于 ${updatedAt}` : '等待更新'}</span>
           <span class="meta-dot"></span>
           <span>不定期更新</span>
         </p>
@@ -34,19 +39,23 @@ const cards = [
   </section>
 
   <section class="container-page now-section">
-    <div class="now-page-grid">
-      {cards.map((card) => (
-        <article class:list={['now-card', card.wide && 'now-card-wide']}>
-          <p class="now-label">{card.label}</p>
-          <p class="now-value">{card.value}</p>
-        </article>
-      ))}
+    {hasNow ? (
+      <div class="now-page-grid">
+        {cards.map((card) => (
+          <article class:list={['now-card', card.wide && 'now-card-wide']}>
+            <p class="now-label">{card.label}</p>
+            <p class="now-value">{card.value}</p>
+          </article>
+        ))}
 
-      <article class="now-note glass now-card-wide">
-        <p class="eyebrow">A SMALL NOTE</p>
-        <p>{now.note}</p>
-        <span class="now-stamp">此刻手记 · {formatDate(new Date(now.updatedAt))}</span>
-      </article>
-    </div>
+        <article class="now-note glass now-card-wide">
+          <p class="eyebrow">A SMALL NOTE</p>
+          <p>{now.note}</p>
+          <span class="now-stamp">此刻手记{updatedAt ? ` · ${updatedAt}` : ''}</span>
+        </article>
+      </div>
+    ) : (
+      <p class="empty-state">此刻还没有写下来。等有想记录的时候，再来。</p>
+    )}
   </section>
 </BaseLayout>
