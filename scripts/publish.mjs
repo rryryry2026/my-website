@@ -87,15 +87,22 @@ if (remote.status !== 0 || !remote.stdout) {
 }
 
 const pending = capture('git', ['status', '--porcelain']).stdout;
-if (!pending) {
+const aheadResult = capture('git', ['rev-list', '--count', 'origin/main..HEAD']);
+const aheadCount = aheadResult.status === 0 ? Number(aheadResult.stdout || 0) : 0;
+
+if (!pending && aheadCount === 0) {
   console.log('\n没有需要发布的修改。');
   console.log('如果只想重新部署一次，可以在 GitHub Actions 页面手动运行 “Deploy to Aliyun”。\n');
   process.exit(0);
 }
 
+if (!pending && aheadCount > 0) {
+  console.log(`\n没有新的文件修改，但有 ${aheadCount} 个本地提交尚未推送，将直接推送。`);
+}
+
 /* 构建校验 ------------------------------------------------------------------- */
 
-if (!skipBuild) {
+if (pending && !skipBuild) {
   const astroCli = path.join(repoRoot, 'node_modules', 'astro', 'bin', 'astro.mjs');
   if (!fs.existsSync(astroCli)) {
     die('还没安装依赖，请先运行 npm install（或加 --skip-build 跳过构建校验）。');
@@ -110,21 +117,6 @@ if (!skipBuild) {
 
 /* 暂存并展示摘要 -------------------------------------------------------------- */
 
-run('git', ['add', '-A']);
-
-const staged = capture('git', ['diff', '--cached', '--quiet']);
-if (staged.status === 0) {
-  console.log('\n没有需要提交的修改（构建产物不会进入 Git）。\n');
-  process.exit(0);
-}
-
-console.log('\n将要提交的变更：\n');
-run('git', ['--no-pager', 'status', '--short']);
-console.log('');
-run('git', ['--no-pager', 'diff', '--cached', '--stat']);
-
-/* 提交信息与确认 -------------------------------------------------------------- */
-
 const now = new Date();
 const pad = (value) => String(value).padStart(2, '0');
 const defaultMessage = `site: publish ${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
@@ -132,33 +124,69 @@ const defaultMessage = `site: publish ${now.getFullYear()}-${pad(now.getMonth() 
 )} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 let message = messageArg || defaultMessage;
 
-if (!assumeYes) {
+if (pending) {
+  run('git', ['add', '-A']);
+
+  const staged = capture('git', ['diff', '--cached', '--quiet']);
+  if (staged.status === 0) {
+    console.log('\n没有需要提交的修改（构建产物不会进入 Git）。\n');
+    process.exit(0);
+  }
+
+  console.log('\n将要提交的变更：\n');
+  run('git', ['--no-pager', 'status', '--short']);
+  console.log('');
+  run('git', ['--no-pager', 'diff', '--cached', '--stat']);
+
+  /* 提交信息与确认 ------------------------------------------------------------ */
+
+  if (!assumeYes) {
+    if (!process.stdin.isTTY) {
+      run('git', ['reset'], { stdio: 'ignore' });
+      die('当前环境不能交互确认，请加 --yes 参数。');
+    }
+
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    const answer = (await rl.question(`\n提交信息 [${message}]: `)).trim();
+    if (answer) message = answer;
+
+    const confirm = (await rl.question('确认提交并推送到 GitHub？(y/N) '))
+      .trim()
+      .toLowerCase();
+    rl.close();
+
+    if (confirm !== 'y' && confirm !== 'yes') {
+      spawnSync('git', ['reset'], { cwd: repoRoot, stdio: 'ignore' });
+      console.log('\n已取消发布，文件修改都还在，只是取消了暂存。\n');
+      process.exit(0);
+    }
+  }
+
+  /* 提交 -------------------------------------------------------------------- */
+
+  if (run('git', ['commit', '-m', message]) !== 0) {
+    die('提交失败。');
+  }
+} else if (!assumeYes) {
+  /* 只有未推送的本地提交时，仅确认是否推送 ---------------------------------- */
+
   if (!process.stdin.isTTY) {
-    run('git', ['reset'], { stdio: 'ignore' });
     die('当前环境不能交互确认，请加 --yes 参数。');
   }
 
   const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const answer = (await rl.question(`\n提交信息 [${message}]: `)).trim();
-  if (answer) message = answer;
-
-  const confirm = (await rl.question('确认提交并推送到 GitHub？(y/N) '))
+  const confirm = (await rl.question(`\n确认推送 ${aheadCount} 个本地提交到 GitHub？(y/N) `))
     .trim()
     .toLowerCase();
   rl.close();
 
   if (confirm !== 'y' && confirm !== 'yes') {
-    spawnSync('git', ['reset'], { cwd: repoRoot, stdio: 'ignore' });
-    console.log('\n已取消发布，文件修改都还在，只是取消了暂存。\n');
+    console.log('\n已取消推送。\n');
     process.exit(0);
   }
 }
 
-/* 提交与推送 ------------------------------------------------------------------ */
-
-if (run('git', ['commit', '-m', message]) !== 0) {
-  die('提交失败。');
-}
+/* 推送 ---------------------------------------------------------------------- */
 
 console.log('\n› 正在推送到 GitHub…\n');
 if (run('git', ['push', 'origin', 'main']) !== 0) {
