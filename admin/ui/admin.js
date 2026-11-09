@@ -23,6 +23,8 @@ const state = {
 };
 
 let editorKeydown = null;
+let editorResize = null;
+let editorObserver = null;
 
 /* -------------------------------------------------------------------------- */
 /* 工具                                                                        */
@@ -119,6 +121,7 @@ function setNav(name) {
 }
 
 function loading() {
+  viewEl.classList.remove('view-wide');
   viewEl.innerHTML = '<div class="loading">正在加载…</div>';
 }
 
@@ -213,13 +216,17 @@ function inlineMarkdown(text) {
   );
   out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   out = out.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
+  out = out.replace(/~~([^~]+)~~/g, '<del>$1</del>');
   return out;
 }
 
 function renderMarkdown(markdown) {
   const codeBlocks = [];
-  const source = String(markdown ?? '').replace(/```[^\n]*\n([\s\S]*?)```/g, (_, code) => {
-    codeBlocks.push(`<pre><code>${esc(code)}</code></pre>`);
+  const source = String(markdown ?? '').replace(/```([^\n`]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    const label = String(lang).trim().split(/\s+/)[0];
+    codeBlocks.push(
+      `<pre${label ? ` data-lang="${esc(label)}"` : ''}><code>${esc(code.replace(/\n$/, ''))}</code></pre>`
+    );
     return `\u0000CODE${codeBlocks.length - 1}\u0000`;
   });
 
@@ -241,12 +248,51 @@ function renderMarkdown(markdown) {
     }
   };
 
-  for (const line of lines) {
+  const splitRow = (text) =>
+    text.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
+  const isTableSeparator = (text) =>
+    /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(text);
+  const alignOf = (cell) =>
+    cell.startsWith(':') && cell.endsWith(':')
+      ? 'center'
+      : cell.endsWith(':')
+        ? 'right'
+        : cell.startsWith(':')
+          ? 'left'
+          : '';
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
     const code = line.match(/\u0000CODE(\d+)\u0000/);
     if (code) {
       flushParagraph();
       closeList();
       html += line.replace(/\u0000CODE(\d+)\u0000/g, (_, index) => codeBlocks[Number(index)]);
+      continue;
+    }
+
+    if (line.includes('|') && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+      flushParagraph();
+      closeList();
+      const header = splitRow(line);
+      const aligns = splitRow(lines[i + 1]).map(alignOf);
+      const rows = [];
+      let rowIndex = i + 2;
+      while (rowIndex < lines.length && lines[rowIndex].includes('|') && lines[rowIndex].trim()) {
+        rows.push(splitRow(lines[rowIndex]));
+        rowIndex += 1;
+      }
+      const cell = (tag, text, column) =>
+        `<${tag}${aligns[column] ? ` style="text-align:${aligns[column]}"` : ''}>${inlineMarkdown(text ?? '')}</${tag}>`;
+      html += `<table><thead><tr>${header.map((text, column) => cell('th', text, column)).join('')}</tr></thead>`;
+      if (rows.length) {
+        html += `<tbody>${rows
+          .map((row) => `<tr>${header.map((_, column) => cell('td', row[column], column)).join('')}</tr>`)
+          .join('')}</tbody>`;
+      }
+      html += '</table>';
+      i = rowIndex - 1;
       continue;
     }
 
@@ -315,16 +361,38 @@ function renderMarkdown(markdown) {
 function previewDocument(html) {
   return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
   <style>
-    body{margin:0;padding:2rem 2.2rem;background:#fffaf2;color:#3b2419;
-      font-family:'Noto Serif SC','Songti SC','STSong',serif;font-size:15px;line-height:1.85;}
-    h1,h2,h3,h4{font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;line-height:1.4;margin:1.6em 0 .6em;}
-    h1{font-size:1.9rem}h2{font-size:1.45rem}h3{font-size:1.15rem}
-    p{margin:0 0 1em}img{max-width:100%;height:auto;border-radius:8px}
-    a{color:#c7542c}code{background:#f0e4d3;padding:.12em .35em;border-radius:4px;font-size:.9em}
-    pre{background:#2b1a13;color:#f6e6d3;padding:1rem;border-radius:8px;overflow:auto}
-    pre code{background:none;padding:0;color:inherit}
-    blockquote{margin:1.2em 0;padding:.2em 0 .2em 1em;border-left:3px solid #e8b58d;color:#7a5a45}
-    ul,ol{margin:0 0 1em;padding-left:1.4em}hr{border:0;border-top:1px solid #e6d6c2;margin:2em 0}
+    body{margin:0;padding:1.7rem 1.8rem 3rem;background:#fffaf2;color:#3b2419;
+      font-family:'Noto Serif SC','Songti SC','STSong',serif;font-size:15px;line-height:1.88;
+      overflow-wrap:break-word;}
+    h1,h2,h3,h4,h5,h6{font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;color:#2d1a10;
+      line-height:1.45;margin:1.7em 0 .65em;}
+    h1{font-size:1.8rem}h2{font-size:1.4rem}h3{font-size:1.15rem}h4{font-size:1.02rem}
+    h2{padding-left:.6rem;border-left:3px solid #e0875b}
+    p{margin:0 0 1.05em}
+    img{max-width:100%;height:auto;border-radius:10px;display:block;margin:1.4em auto;
+      box-shadow:0 10px 28px -14px rgba(90,50,25,.35)}
+    a{color:#c7542c;text-decoration:none;border-bottom:1px solid rgba(199,84,44,.35)}
+    a:hover{border-bottom-color:#c7542c}
+    strong{color:#2d1a10}
+    code{background:#f0e4d3;padding:.12em .38em;border-radius:4px;font-size:.88em;
+      font-family:'JetBrains Mono',Consolas,monospace}
+    pre{position:relative;background:#2b1a13;color:#f6e6d3;padding:1rem 1.15rem;border-radius:10px;
+      overflow:auto;margin:1.5em 0;font-size:.86em;line-height:1.75}
+    pre[data-lang]::before{content:attr(data-lang);display:block;margin-bottom:.55em;
+      color:#b9926f;font-size:.72em;letter-spacing:.1em;text-transform:uppercase}
+    pre code{background:none;padding:0;color:inherit;font-size:inherit}
+    blockquote{margin:1.4em 0;padding:.55em 1em;border-left:3px solid #e8b58d;
+      border-radius:0 8px 8px 0;background:#fbf1e4;color:#7a5a45}
+    blockquote p{margin:0}
+    ul,ol{margin:0 0 1.05em;padding-left:1.4em}
+    li{margin:.3em 0}
+    li::marker{color:#c7542c}
+    hr{border:0;border-top:1px solid #e6d6c2;margin:2.2em 0}
+    table{display:block;width:100%;overflow-x:auto;border-collapse:collapse;margin:1.5em 0;font-size:.88em}
+    th,td{padding:.55em .8em;border:1px solid #e6d6c2;text-align:left;vertical-align:top}
+    th{background:#f6ecdd;color:#2d1a10;font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;font-weight:600}
+    tr:nth-child(even) td{background:#fdf7ee}
+    del{color:#a08a76}
   </style></head><body>${html || '<p style="color:#b09a86">还没有正文。</p>'}</body></html>`;
 }
 
@@ -437,6 +505,7 @@ async function viewEditor(slug) {
   const isNew = !slug || slug === 'new';
   setCrumb(isNew ? '新建文章' : '编辑文章');
   loading();
+  viewEl.classList.add('view-wide');
 
   let data;
   let body = '';
@@ -482,7 +551,7 @@ async function viewEditor(slug) {
           <textarea id="f-description" rows="2" placeholder="一两句话说明这篇文章…">${esc(safeData.description)}</textarea>
         </label>
 
-        <div class="md-wrap" id="md-wrap">
+        <div class="md-wrap" id="md-wrap" data-mode="split">
           <div class="md-toolbar">
             <button type="button" data-md="h2">H2</button>
             <button type="button" data-md="h3">H3</button>
@@ -492,12 +561,29 @@ async function viewEditor(slug) {
             <button type="button" data-md="quote">引用</button>
             <button type="button" data-md="list">列表</button>
             <button type="button" data-md="code">代码</button>
+            <button type="button" data-md="table">表格</button>
             <button type="button" data-md="image">插入图片</button>
             <span class="spacer"></span>
-            <button type="button" id="preview-toggle">预览</button>
+            <div class="md-modes" role="group" aria-label="编辑视图">
+              <button type="button" data-mode="write">编辑</button>
+              <button type="button" data-mode="split" class="is-active">分屏</button>
+              <button type="button" data-mode="preview">预览</button>
+            </div>
           </div>
-          <textarea class="md-editor" id="f-body" spellcheck="false" placeholder="用 Markdown 写正文…">${esc(body)}</textarea>
-          <iframe class="md-preview" id="md-preview" sandbox="allow-popups" title="正文预览"></iframe>
+          <div class="md-panes">
+            <textarea class="md-editor" id="f-body" spellcheck="false" placeholder="用 Markdown 写正文…">${esc(body)}</textarea>
+            <div class="md-preview-pane">
+              <iframe class="md-preview" id="md-preview" sandbox="allow-same-origin allow-popups" title="正文预览"></iframe>
+            </div>
+          </div>
+          <div class="md-status">
+            <span>字符数 <b id="stat-chars">0</b></span>
+            <span>行数 <b id="stat-lines">0</b></span>
+            <span>正文字数 <b id="stat-words">0</b></span>
+            <span class="spacer"></span>
+            <label class="md-sync"><input type="checkbox" id="sync-scroll" checked> 同步滚动</label>
+            <button type="button" class="md-top" id="md-top">回到顶部</button>
+          </div>
         </div>
       </div>
 
@@ -560,15 +646,99 @@ async function viewEditor(slug) {
   const draftEl = document.getElementById('f-draft');
   const previewEl = document.getElementById('md-preview');
   const mdWrap = document.getElementById('md-wrap');
-  const toggleEl = document.getElementById('preview-toggle');
+  const syncScrollEl = document.getElementById('sync-scroll');
+  const statCharsEl = document.getElementById('stat-chars');
+  const statLinesEl = document.getElementById('stat-lines');
+  const statWordsEl = document.getElementById('stat-words');
 
   let slugTouched = !isNew;
   let currentSlug = slug;
 
-  const refreshPreview = () => {
-    if (!mdWrap.classList.contains('is-previewing')) return;
-    previewEl.srcdoc = previewDocument(renderMarkdown(bodyEl.value));
+  /* 实时预览：iframe 只加载一次，之后直接替换 body，避免每次输入整页闪烁 */
+  let previewDoc = null;
+  let previewQueued = false;
+  let scrollQueued = false;
+
+  const previewHtml = () =>
+    renderMarkdown(bodyEl.value) || '<p style="color:#b09a86">还没有正文。</p>';
+
+  const renderPreview = () => {
+    const html = previewHtml();
+    if (previewDoc?.body) {
+      previewDoc.body.innerHTML = html;
+      return;
+    }
+    previewEl.srcdoc = previewDocument(html);
   };
+
+  previewEl.addEventListener('load', () => {
+    previewDoc = previewEl.contentDocument;
+    renderPreview();
+  });
+
+  const queuePreview = () => {
+    if (mdWrap.dataset.mode === 'write') return;
+    if (previewQueued) return;
+    previewQueued = true;
+    requestAnimationFrame(() => {
+      previewQueued = false;
+      renderPreview();
+    });
+  };
+
+  /* 字数统计 */
+  const countWords = (text) => {
+    const plain = String(text)
+      .replace(/```[\s\S]*?```/g, ' ')
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/[#>*_`~|=-]/g, ' ');
+    const cjk = (plain.match(/[㐀-䶿一-鿿]/g) || []).length;
+    const latin = (plain.match(/[A-Za-z0-9][A-Za-z0-9'._-]*/g) || []).length;
+    return cjk + latin;
+  };
+
+  const updateStats = () => {
+    const value = bodyEl.value;
+    statCharsEl.textContent = value.length.toLocaleString('zh-CN');
+    statLinesEl.textContent = (value ? value.split(/\r?\n/).length : 0).toLocaleString('zh-CN');
+    statWordsEl.textContent = countWords(value).toLocaleString('zh-CN');
+  };
+
+  /* 视图模式：编辑 / 分屏 / 预览 */
+  const MD_MODES = ['write', 'split', 'preview'];
+  const modeButtons = mdWrap.querySelectorAll('.md-modes [data-mode]');
+  const applyMode = (mode, persist = true) => {
+    const next = MD_MODES.includes(mode) ? mode : 'split';
+    mdWrap.dataset.mode = next;
+    modeButtons.forEach((button) => {
+      const active = button.dataset.mode === next;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    if (next !== 'write') renderPreview();
+    if (persist) localStorage.setItem('admin.mdMode', next);
+  };
+  modeButtons.forEach((button) => {
+    button.addEventListener('click', () => applyMode(button.dataset.mode));
+  });
+
+  /* 编辑区滚动带动预览 */
+  const scrollPreviewTo = () => {
+    if (!syncScrollEl.checked || !previewDoc) return;
+    if (scrollQueued) return;
+    scrollQueued = true;
+    requestAnimationFrame(() => {
+      scrollQueued = false;
+      const max = bodyEl.scrollHeight - bodyEl.clientHeight;
+      const ratio = max > 0 ? bodyEl.scrollTop / max : 0;
+      const win = previewEl.contentWindow;
+      const docEl = previewDoc.scrollingElement || previewDoc.documentElement;
+      if (!win || !docEl) return;
+      win.scrollTo(0, ratio * Math.max(0, docEl.scrollHeight - docEl.clientHeight));
+    });
+  };
+  bodyEl.addEventListener('scroll', scrollPreviewTo);
 
   const markEdited = () => markDirty(true);
   [titleEl, descEl, bodyEl, slugEl, pubDateEl, updatedEl, tagsEl, categoryEl].forEach((el) => {
@@ -576,7 +746,48 @@ async function viewEditor(slug) {
     el.addEventListener('change', markEdited);
   });
   draftEl.addEventListener('change', markEdited);
-  bodyEl.addEventListener('input', refreshPreview);
+
+  bodyEl.addEventListener('input', () => {
+    queuePreview();
+    updateStats();
+  });
+
+  document.getElementById('md-top').addEventListener('click', () => {
+    bodyEl.scrollTo({ top: 0, behavior: 'smooth' });
+    previewEl.contentWindow?.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  const savedSync = localStorage.getItem('admin.mdSync');
+  syncScrollEl.checked = savedSync === null ? true : savedSync === '1';
+  syncScrollEl.addEventListener('change', () => {
+    localStorage.setItem('admin.mdSync', syncScrollEl.checked ? '1' : '0');
+  });
+
+  applyMode(localStorage.getItem('admin.mdMode') || 'split', false);
+  updateStats();
+
+  /* 编辑区撑满视口剩余高度，避免底部大片空白 */
+  const fitPaneHeight = () => {
+    if (!mdWrap.isConnected) return;
+    const toolbarH = mdWrap.querySelector('.md-toolbar')?.offsetHeight ?? 0;
+    const statusH = mdWrap.querySelector('.md-status')?.offsetHeight ?? 0;
+    const wrapTop = mdWrap.getBoundingClientRect().top + window.scrollY;
+    const viewBottom = parseFloat(getComputedStyle(viewEl).paddingBottom) || 0;
+    const available =
+      document.documentElement.clientHeight - wrapTop - toolbarH - statusH - viewBottom - 4;
+    const height = Math.min(1100, Math.max(300, Math.round(available)));
+    mdWrap.style.setProperty('--md-pane-h', `${height}px`);
+  };
+
+  if (editorResize) window.removeEventListener('resize', editorResize);
+  editorResize = () => requestAnimationFrame(fitPaneHeight);
+  window.addEventListener('resize', editorResize);
+  if (editorObserver) editorObserver.disconnect();
+  editorObserver = new ResizeObserver(() => fitPaneHeight());
+  editorObserver.observe(titleEl);
+  editorObserver.observe(descEl);
+  fitPaneHeight();
+  requestAnimationFrame(fitPaneHeight);
 
   slugEl.addEventListener('input', () => {
     slugTouched = true;
@@ -598,6 +809,8 @@ async function viewEditor(slug) {
       else if (action === 'quote') insertAtCursor(bodyEl, '> ', '', '引用内容');
       else if (action === 'list') insertAtCursor(bodyEl, '- ', '', '列表项');
       else if (action === 'code') insertAtCursor(bodyEl, '`', '`', '代码');
+      else if (action === 'table')
+        insertAtCursor(bodyEl, '\n| 列一 | 列二 |\n| --- | --- |\n| 内容 | 内容 |\n', '', '');
       else if (action === 'image') {
         try {
           const saved = await pickAndUpload();
@@ -607,12 +820,6 @@ async function viewEditor(slug) {
         }
       }
     });
-  });
-
-  toggleEl.addEventListener('click', () => {
-    const previewing = mdWrap.classList.toggle('is-previewing');
-    toggleEl.textContent = previewing ? '编辑' : '预览';
-    if (previewing) refreshPreview();
   });
 
   const collect = () => ({
@@ -1844,6 +2051,14 @@ async function route() {
     document.removeEventListener('keydown', editorKeydown);
     editorKeydown = null;
   }
+  if (editorResize) {
+    window.removeEventListener('resize', editorResize);
+    editorResize = null;
+  }
+  if (editorObserver) {
+    editorObserver.disconnect();
+    editorObserver = null;
+  }
   viewEl.onclick = null;
   viewEl.oninput = null;
 
@@ -1896,6 +2111,162 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
   route();
 });
 
+/* 一键发布 ----------------------------------------------------------------- */
+
+const publishBtn = document.getElementById('publish-btn');
+let publishActive = false;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function setPublishBusy(busy) {
+  publishActive = busy;
+  if (!publishBtn) return;
+  publishBtn.disabled = busy;
+  publishBtn.textContent = busy ? '发布中…' : '一键发布';
+}
+
+function publishDialogHtml() {
+  return `
+    <p class="publish-intro">
+      将依次执行：本地构建校验 → 提交当前所有改动 → 推送到 GitHub。
+      推送成功后由 GitHub Actions 自动部署到线上，通常需要 1–3 分钟。
+    </p>
+    <label class="field">
+      <span>提交信息（留空自动生成）</span>
+      <input id="publish-message" type="text" maxlength="120" placeholder="site: 更新内容" autocomplete="off" />
+    </label>
+    <div class="dialog-actions">
+      <button class="btn ghost" id="publish-cancel" type="button">取消</button>
+      <button class="btn primary" id="publish-go" type="button">开始发布</button>
+    </div>
+    <pre class="publish-log" id="publish-log" hidden></pre>
+  `;
+}
+
+function renderPublishProgress(job) {
+  const log = document.getElementById('publish-log');
+  const go = document.getElementById('publish-go');
+  const cancel = document.getElementById('publish-cancel');
+  const message = document.getElementById('publish-message');
+  if (!log) return; // 对话框已关闭，轮询继续，结束时会弹 toast
+
+  log.hidden = false;
+  log.textContent = job.output || (job.running ? '正在启动发布…' : '没有输出。');
+  log.className = `publish-log${job.running ? '' : job.ok ? ' is-ok' : ' is-error'}`;
+  log.scrollTop = log.scrollHeight;
+
+  if (go) {
+    go.disabled = job.running;
+    go.textContent = job.running ? '发布中…' : job.ok ? '完成' : '重试';
+    go.dataset.done = job.running ? '' : '1';
+  }
+  if (cancel) cancel.hidden = !job.running;
+  if (message) message.disabled = true;
+}
+
+async function watchPublish() {
+  setPublishBusy(true);
+  let job = null;
+  let failures = 0;
+
+  while (true) {
+    try {
+      const result = await api('/api/publish');
+      job = result.job;
+      failures = 0;
+    } catch (error) {
+      failures += 1;
+      if (failures >= 3) {
+        job = { running: false, ok: false, output: `无法获取发布状态：${error.message}` };
+        renderPublishProgress(job);
+        break;
+      }
+      await sleep(1500);
+      continue;
+    }
+
+    if (!job) {
+      job = { running: false, ok: false, output: '发布任务已丢失，管理服务可能重启过。' };
+      renderPublishProgress(job);
+      break;
+    }
+
+    renderPublishProgress(job);
+    if (!job.running) break;
+    await sleep(1200);
+  }
+
+  setPublishBusy(false);
+  if (job?.ok) {
+    if (job.output.includes('没有需要发布的修改')) {
+      toast('没有需要发布的修改，内容已是最新');
+    } else {
+      toast('发布成功，GitHub Actions 正在部署，约 1–3 分钟后线上生效');
+    }
+  } else if (job) {
+    toast('发布失败，详情见发布日志', true);
+  }
+}
+
+async function startPublish(message) {
+  if (publishActive) return;
+  setPublishBusy(true);
+
+  const log = document.getElementById('publish-log');
+  if (log) {
+    log.hidden = false;
+    log.className = 'publish-log';
+    log.textContent = '正在启动发布…';
+  }
+
+  try {
+    await api('/api/publish', { method: 'POST', body: { message } });
+  } catch (error) {
+    setPublishBusy(false);
+    if (log) {
+      log.textContent = error.message;
+      log.className = 'publish-log is-error';
+    }
+    toast(error.message, true);
+    return;
+  }
+
+  watchPublish();
+}
+
+function openPublishDialog() {
+  showDialog('一键发布', publishDialogHtml());
+
+  const message = document.getElementById('publish-message');
+  const go = document.getElementById('publish-go');
+  const cancel = document.getElementById('publish-cancel');
+
+  cancel.addEventListener('click', () => dialog.close());
+
+  go.addEventListener('click', () => {
+    if (go.dataset.done === '1') {
+      dialog.close();
+      return;
+    }
+    if (publishActive) return;
+    startPublish(message.value.trim());
+  });
+
+  if (publishActive) {
+    message.disabled = true;
+    cancel.hidden = true;
+    go.disabled = true;
+    go.textContent = '发布中…';
+    const log = document.getElementById('publish-log');
+    log.hidden = false;
+    log.textContent = '正在发布…';
+  }
+}
+
+if (publishBtn) {
+  publishBtn.addEventListener('click', openPublishDialog);
+}
+
 document.getElementById('build-btn').addEventListener('click', async (event) => {
   const button = event.currentTarget;
   if (!confirm('现在运行 npm run build 生成可部署的 dist 吗？')) return;
@@ -1930,6 +2301,14 @@ async function boot() {
 
   if (!location.hash) history.replaceState(null, '', '#/posts');
   await route();
+
+  // 页面刷新后，如果上一次发布还在进行，继续显示进度
+  try {
+    const { job } = await api('/api/publish');
+    if (job?.running) watchPublish();
+  } catch {
+    /* 忽略：发布状态不影响管理端其他功能 */
+  }
 }
 
 boot();

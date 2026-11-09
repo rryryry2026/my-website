@@ -2,11 +2,11 @@
   "title": "晚巷",
   "fullTitle": "晚巷 · 我的郁金香小姐",
   "description": "在黄昏与屋檐之间，收藏缓慢的句子、照片，以及一些不想忘记的日常。",
-  "author": "晚巷主人",
+  "author": "阮如意",
   "role": "写字的人 · 黄昏收藏家",
   "intro": "喜欢旧巷、晚霞和一切慢慢发生的事。这里没有宏大的叙事，只有一些被黄昏照亮的小日子。",
   "location": "某座有晚霞的小城",
-  "email": "hello@example.com",
+  "email": "1974295430@qq.com",
   "socials": [
     {
       "label": "GitHub",
@@ -14,13 +14,8 @@
       "icon": "github"
     },
     {
-      "label": "Instagram",
-      "href": "https://www.instagram.com/",
-      "icon": "instagram"
-    },
-    {
       "label": "邮箱",
-      "href": "mailto:hello@example.com",
+      "href": "",
       "icon": "mail"
     }
   ],
@@ -40,15 +35,27 @@
     "title": "郁金香",
     "titleAccent": "小姐",
     "titleEn": "MY TULIP LADY",
-    "lead": ["在屋顶与晚霞之间，", "风把一天的故事吹得很慢。"],
+    "lead": [
+      "在屋顶与晚霞之间，",
+      "风把一天的故事吹得很慢。"
+    ],
     "introKicker": "HELLO，我是",
     "postcard": {
       "stamp": "晚巷来信 · NO. 07",
-      "quote": ["晚霞落在瓦片上，", "像一封没有署名的信。"],
-      "note": ["写给肖艾，", "也写给每一个在黄昏里等风的人。"]
+      "quote": [
+        "晚霞落在瓦片上，",
+        "像一封没有署名的信。"
+      ],
+      "note": [
+        "写给肖艾，",
+        "也写给每一个在黄昏里等风的人。"
+      ]
     },
     "vertical": "屋檐 · 晚风 · 旧巷",
-    "quote": ["生活不是等待一场盛大的晚霞，", "而是记得抬头。"],
+    "quote": [
+      "生活不是等待一场盛大的晚霞，",
+      "而是记得抬头。"
+    ],
     "quoteSource": "— 晚巷手记",
     "scrollLabel": "SCROLL TO WANDER"
   },
@@ -66,9 +73,18 @@
       "这个博客叫「晚巷」。名字来自一个关于屋顶、晚风和郁金香的念头。希望这里的每个字，都能像巷口那盏灯一样，不刺眼，但刚好照亮回家的路。"
     ],
     "facts": [
-      { "label": "坐标", "value": "某座有晚霞的小城" },
-      { "label": "最近在做", "value": "学着把日子过慢" },
-      { "label": "喜欢", "value": "黄昏 · 旧巷 · 郁金香" }
+      {
+        "label": "坐标",
+        "value": "某座有晚霞的小城"
+      },
+      {
+        "label": "最近在做",
+        "value": "学着把日子过慢"
+      },
+      {
+        "label": "喜欢",
+        "value": "黄昏 · 旧巷 · 郁金香"
+      }
     ],
     "siteQuote": "“一个用来收藏黄昏、偶尔自言自语的角落。”",
     "siteText": "本站使用 Astro 与 Tailwind CSS 构建，是一个安静的静态站点。没有算法，没有信息流，只有按时间排列的文字。背景里的风和晚霞，来自一段只有十秒的傍晚。"

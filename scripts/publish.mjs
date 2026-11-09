@@ -44,14 +44,24 @@ const capture = (command, args) => {
   };
 };
 
+/* 管理端「一键发布」通过 PUBLISH_STREAM=1 调用本脚本，子命令输出改为管道并转发，
+   这样管理端才能把构建与推送过程实时显示在页面里。 */
+const streamOutput = process.env.PUBLISH_STREAM === '1';
+
 const run = (command, args, options = {}) => {
+  const { stdio, ...rest } = options;
   const result = spawnSync(command, args, {
     cwd: process.cwd(),
     env: commandEnv,
-    stdio: 'inherit',
-    ...options,
+    stdio: stdio ?? (streamOutput ? ['ignore', 'pipe', 'pipe'] : 'inherit'),
+    maxBuffer: 10 * 1024 * 1024,
+    ...rest,
   });
   if (result.error) die(`无法执行 ${command}：${result.error.message}`);
+  if (streamOutput) {
+    if (result.stdout?.length) process.stdout.write(result.stdout);
+    if (result.stderr?.length) process.stderr.write(result.stderr);
+  }
   return result.status ?? 1;
 };
 

@@ -616,6 +616,99 @@ function runBuild() {
   });
 }
 
+/* 一键发布 ----------------------------------------------------------------- */
+
+const PUBLISH_SCRIPT = path.join(ROOT, 'scripts', 'publish.mjs');
+let publishChild = null;
+let publishJob = null;
+
+function publishState() {
+  if (!publishJob) return null;
+  return {
+    running: publishJob.running,
+    ok: publishJob.ok,
+    exitCode: publishJob.exitCode,
+    output: publishJob.output,
+    startedAt: publishJob.startedAt,
+    finishedAt: publishJob.finishedAt,
+  };
+}
+
+function startPublish(message) {
+  const job = {
+    running: true,
+    ok: null,
+    exitCode: null,
+    output: '',
+    startedAt: new Date().toISOString(),
+    finishedAt: null,
+  };
+  publishJob = job;
+
+  const args = [PUBLISH_SCRIPT, '--yes'];
+  if (message) args.push(message);
+
+  const child = spawn(process.execPath, args, {
+    cwd: ROOT,
+    env: { ...process.env, GIT_PAGER: 'cat', PAGER: 'cat', PUBLISH_STREAM: '1' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  publishChild = child;
+
+  const append = (chunk) => {
+    job.output += chunk.toString();
+    if (job.output.length > 200000) job.output = job.output.slice(-200000);
+  };
+  child.stdout.on('data', append);
+  child.stderr.on('data', append);
+
+  let settled = false;
+  const finish = (code) => {
+    if (settled) return;
+    settled = true;
+    job.running = false;
+    job.ok = code === 0;
+    job.exitCode = code;
+    job.finishedAt = new Date().toISOString();
+    if (publishChild === child) publishChild = null;
+  };
+
+  const timer = setTimeout(() => {
+    if (settled) return;
+    append('\n发布超时（10 分钟），已终止。\n');
+    killChild(child);
+    finish(1);
+    clearTimeout(timer);
+  }, 10 * 60 * 1000);
+
+  child.on('error', (error) => {
+    clearTimeout(timer);
+    append(`\n无法启动发布脚本：${error.message}\n`);
+    finish(1);
+  });
+  child.on('close', (code) => {
+    clearTimeout(timer);
+    finish(code ?? 1);
+  });
+
+  return job;
+}
+
+function killChild(child) {
+  if (!child || child.killed) return;
+  if (process.platform === 'win32') {
+    spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+  } else {
+    child.kill('SIGTERM');
+  }
+}
+
+function stopPublish() {
+  if (!publishChild) return;
+  killChild(publishChild);
+  publishChild = null;
+}
+
 /* -------------------------------------------------------------------------- */
 /* 路由                                                                        */
 /* -------------------------------------------------------------------------- */
@@ -840,6 +933,29 @@ async function handleApi(req, res, url) {
     return json(res, result.ok ? 200 : 500, result);
   }
 
+  if (pathname === '/api/publish' && method === 'GET') {
+    return json(res, 200, { job: publishState() });
+  }
+
+  if (pathname === '/api/publish' && method === 'POST') {
+    if (publishJob?.running) return fail(res, 409, '已有发布任务正在进行');
+    let message = '';
+    const raw = (await readBody(req, 64 * 1024)).toString('utf8').trim();
+    if (raw) {
+      try {
+        const input = JSON.parse(raw);
+        message = String(input?.message ?? '')
+          .replace(/[\r\n]+/g, ' ')
+          .trim()
+          .slice(0, 120);
+      } catch {
+        return fail(res, 400, '请求内容不是合法的 JSON');
+      }
+    }
+    startPublish(message);
+    return json(res, 202, { job: publishState() });
+  }
+
   return fail(res, 404, '接口不存在');
 }
 
@@ -883,7 +999,11 @@ server.listen(PORT, HOST, () => {
 });
 
 process.on('SIGINT', () => {
+  stopPublish();
   stopPreview();
   process.exit(0);
 });
-process.on('exit', stopPreview);
+process.on('exit', () => {
+  stopPublish();
+  stopPreview();
+});
