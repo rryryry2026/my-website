@@ -6,6 +6,7 @@ const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
 
 function isActive(href: string): boolean {
   const target = href.replace(/\/+$/, '') || '/';
+  if (target === '/life' && ['/gallery', '/now', '/moments', '/footprints', '/wishes'].some((path) => currentPath === path || currentPath.startsWith(`${path}/`))) return true;
   return target === '/'
     ? currentPath === '/'
     : currentPath === target || currentPath.startsWith(`${target}/`);

@@ -2043,6 +2043,40 @@ function renderFriendsForm() {
 /* 路由                                                                        */
 /* -------------------------------------------------------------------------- */
 
+
+async function viewArchiveItems(kind) {
+  setNav(kind);
+  const isFootprint = kind === 'footprints';
+  const label = isFootprint ? '足迹' : '愿望清单';
+  crumbEl.textContent = label;
+  const response = await api(`/api/data/${kind}`);
+  const items = response.data;
+  const render = () => {
+    viewEl.innerHTML = `<div class="page-head"><div><h1>${label}</h1><p>维护生活档案中的${label}，拖动顺序使用上下移动按钮。</p></div><div><a class="btn ghost" href="${esc(state.previewUrl)}${kind}/" target="_blank" rel="noreferrer">预览页面 ↗</a> <button class="btn primary" type="button" data-save>保存${label}</button></div></div>
+      <div class="photo-grid">${items.map((item, index) => `<div class="panel"><div class="settings-sections">
+        ${isFootprint ? `<label>地点<input data-index="${index}" data-field="place" value="${esc(item.place)}"></label><label>日期<input type="date" data-index="${index}" data-field="date" value="${esc(item.date)}"></label><label>记录<textarea data-index="${index}" data-field="note">${esc(item.note)}</textarea></label><label>图片地址<input data-index="${index}" data-field="image" value="${esc(item.image)}"></label><button type="button" class="btn ghost small" data-upload="${index}">上传图片</button><label>图片说明<input data-index="${index}" data-field="alt" value="${esc(item.alt)}"></label>` : `<label>愿望<input data-index="${index}" data-field="title" value="${esc(item.title)}"></label><label>备注<textarea data-index="${index}" data-field="note">${esc(item.note)}</textarea></label><label><input type="checkbox" data-index="${index}" data-field="completed" ${item.completed ? 'checked' : ''}> 已完成</label>`}
+        <div><button class="btn ghost small" type="button" data-move="${index}" data-dir="-1" ${index === 0 ? 'disabled' : ''}>↑ 上移</button> <button class="btn ghost small" type="button" data-move="${index}" data-dir="1" ${index === items.length - 1 ? 'disabled' : ''}>↓ 下移</button> <button class="btn ghost small" type="button" data-remove="${index}">删除</button></div></div></div>`).join('') || '<p class="empty">还没有记录，添加第一条吧。</p>'}</div>
+      <p><button class="btn ghost" type="button" data-add>＋ 添加${label}</button> <button class="btn primary" type="button" data-save>保存${label}</button></p>`;
+  };
+  viewEl.oninput = (event) => {
+    const input = event.target;
+    if (input.dataset.field !== undefined) {
+      items[Number(input.dataset.index)][input.dataset.field] = input.type === 'checkbox' ? input.checked : input.value;
+      state.dirty = true;
+    }
+  };
+  viewEl.onclick = async (event) => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    if (button.hasAttribute('data-add')) { items.push(isFootprint ? { date: today(), place: '', note: '', image: '', alt: '' } : { title: '', note: '', completed: false }); state.dirty = true; render(); }
+    else if (button.hasAttribute('data-remove')) { items.splice(Number(button.dataset.remove), 1); state.dirty = true; render(); }
+    else if (button.hasAttribute('data-move')) { const i = Number(button.dataset.move), j = i + Number(button.dataset.dir); if (j >= 0 && j < items.length) [items[i], items[j]] = [items[j], items[i]]; state.dirty = true; render(); }
+    else if (button.hasAttribute('data-upload')) { try { const saved = await pickAndUpload(); if (saved) { items[Number(button.dataset.upload)].image = saved.url; state.dirty = true; render(); } } catch (error) { toast(error.message); } }
+    else if (button.hasAttribute('data-save')) { try { await api(`/api/data/${kind}`, { method: 'PUT', body: { data: items } }); state.dirty = false; toast('保存成功'); } catch (error) { toast(error.message); } }
+  };
+  render();
+}
+
 async function route() {
   const hash = location.hash.replace(/^#\/?/, '');
   const [section, ...rest] = hash.split('/');
@@ -2077,6 +2111,8 @@ async function route() {
       await viewNow();
     } else if (section === 'moments') {
       await viewMoments();
+    } else if (section === 'footprints' || section === 'wishes') {
+      await viewArchiveItems(section);
     } else if (section === 'friends') {
       await viewFriends();
     } else if (section === 'tags') {

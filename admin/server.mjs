@@ -345,6 +345,8 @@ const DATA_FILES = {
   now: path.join(DATA_DIR, 'now.json'),
   moments: path.join(DATA_DIR, 'moments.json'),
   friends: path.join(DATA_DIR, 'friends.json'),
+  footprints: path.join(DATA_DIR, 'footprints.json'),
+  wishes: path.join(DATA_DIR, 'wishes.json'),
 };
 
 const isRemoteOrLocalImage = (value) =>
@@ -430,10 +432,26 @@ function validateFriends(data) {
   }
 }
 
+function validateFootprints(data) {
+  if (!Array.isArray(data)) throw Object.assign(new Error('足迹必须是数组'), { status: 400 });
+  for (const item of data) {
+    if (!item || ['date', 'place', 'note', 'image', 'alt'].some((key) => typeof item[key] !== 'string')) throw Object.assign(new Error('足迹字段格式不正确'), { status: 400 });
+    if (!DATE_RE.test(item.date) || !item.place.trim()) throw Object.assign(new Error('足迹需要日期和地点'), { status: 400 });
+    if (!isRemoteOrLocalImage(item.image)) throw Object.assign(new Error('足迹图片地址不合法'), { status: 400 });
+  }
+}
+function validateWishes(data) {
+  if (!Array.isArray(data)) throw Object.assign(new Error('愿望必须是数组'), { status: 400 });
+  for (const item of data) {
+    if (!item || typeof item.title !== 'string' || !item.title.trim() || typeof item.note !== 'string' || typeof item.completed !== 'boolean') throw Object.assign(new Error('愿望需要标题和有效状态'), { status: 400 });
+  }
+}
 const DATA_VALIDATORS = {
   now: validateNow,
   moments: validateMoments,
   friends: validateFriends,
+  footprints: validateFootprints,
+  wishes: validateWishes,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -870,7 +888,7 @@ async function handleApi(req, res, url) {
     return json(res, 200, { ok: true });
   }
 
-  const dataMatch = pathname.match(/^\/api\/data\/(now|moments|friends)$/);
+  const dataMatch = pathname.match(/^\/api\/data\/(now|moments|friends|footprints|wishes)$/);
   if (dataMatch) {
     const name = dataMatch[1];
     const file = DATA_FILES[name];

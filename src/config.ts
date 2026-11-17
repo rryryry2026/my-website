@@ -24,7 +24,8 @@ export const site = {
   socials: data.socials as SiteSocial[],
   nav: [
     { label: '首页', href: '/' },
-    ...categories.map((category) => ({ label: category.label, href: category.href })),
+    { label: '文章', href: '/blog/' },
+    { label: '生活档案', href: '/life/' },
     { label: '关于我', href: '/about/' },
   ],
 };

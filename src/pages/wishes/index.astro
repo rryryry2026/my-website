@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { wishes } from '../../lib/data';
+const completed = wishes.filter((item) => item.completed).length;
+---
+<BaseLayout title="愿望清单" description="写给未来的愿望与已经实现的小事。">
+  <section class="container-page archive-intro archive-intro-small"><a class="archive-back" href="/life/">← 返回生活档案</a><p class="house-kicker">WISH LIST / 愿望清单</p><h1>给未来，<br /><em>留一些期待。</em></h1><div class="archive-intro-bottom"><p>不管是远方的大计划，还是明天的一件小事，都可以写下来。</p><span>{wishes.length} 个愿望 · {completed} 个完成<br />LITTLE DREAMS, BIG DAYS ↘</span></div></section>
+  <section class="container-page house-section archive-list">{wishes.length ? <div class="wish-list">{wishes.map((wish, index) => <article class:list={['wish-card', { 'is-complete': wish.completed }]}><span class="wish-number">{String(index + 1).padStart(2, '0')}</span><span class="wish-check" aria-hidden="true">{wish.completed ? '✓' : '○'}</span><div><h2>{wish.title}</h2>{wish.note && <p>{wish.note}</p>}</div><span class="wish-status">{wish.completed ? '已完成' : '待完成'}</span></article>)}</div> : <div class="archive-empty"><span>✳</span><h2>愿望还没有写下</h2><p>把想做的事放在这里，慢慢期待，也慢慢实现。</p></div>}</section>
+</BaseLayout>

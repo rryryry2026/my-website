@@ -1,3 +1,5 @@
+import footprintsData from '../data/footprints.json';
+import wishesData from '../data/wishes.json';
 import nowData from '../data/now.json';
 import momentsData from '../data/moments.json';
 import friendsData from '../data/friends.json';
@@ -45,3 +47,9 @@ export const moments = [...(momentsData as Moment[])].sort((a, b) =>
 export const friends = friendsData as Friend[];
 
 export const photos = photosData as Photo[];
+
+export interface Footprint { date: string; place: string; note: string; image: string; alt: string; }
+export interface Wish { title: string; note: string; completed: boolean; }
+
+export const footprints = footprintsData as Footprint[];
+export const wishes = wishesData as Wish[];

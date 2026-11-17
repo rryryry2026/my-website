@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { footprints } from '../../lib/data';
+---
+<BaseLayout title="足迹" description="走过的地方，和沿途留下的故事。">
+  <section class="container-page archive-intro archive-intro-small"><a class="archive-back" href="/life/">← 返回生活档案</a><p class="house-kicker">PLACES / 足迹</p><h1>走过的地方，<br /><em>留下的故事。</em></h1><div class="archive-intro-bottom"><p>把沿途的风景和心情，收进这份慢慢延长的地图。</p><span>{footprints.length} 个地点<br />A RECORD OF PLACES ↘</span></div></section>
+  <section class="container-page house-section archive-list">{footprints.length ? <div class="footprint-list">{footprints.map((item, index) => <article class="footprint-card"><div class="footprint-date"><span>{String(index + 1).padStart(2, '0')}</span><time datetime={item.date}>{item.date.replaceAll('-', '.')}</time></div><div class="footprint-content"><h2>{item.place}</h2>{item.note && <p>{item.note}</p>}</div>{item.image && <img src={item.image} alt={item.alt || item.place} loading="lazy" />}</article>)}</div> : <div class="archive-empty"><span>⌁</span><h2>足迹还在路上</h2><p>等下一次出发，把沿途的故事留在这里。</p></div>}</section>
+</BaseLayout>

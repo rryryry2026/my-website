@@ -1,107 +1,16 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { formatDate, getPostSlug, getPostsByCategory, getPublishedPosts } from '../../lib/posts';
-import photos from '../../data/photos.json';
-
-const posts = getPostsByCategory(
-  getPublishedPosts(await getCollection('blog')),
-  '生活日常'
-);
+import { photos, moments, footprints, wishes } from '../../lib/data';
+const entries = [
+  { no: '01', title: '相册', en: 'GALLERY', desc: '留住那些想要再看一眼的光景。', href: '/gallery/', count: `${photos.length} 张照片`, icon: '◫' },
+  { no: '02', title: '足迹', en: 'PLACES', desc: '走过的地方，和沿途的故事。', href: '/footprints/', count: `${footprints.length} 个地点`, icon: '⌁' },
+  { no: '03', title: '愿望清单', en: 'WISH LIST', desc: '给未来的自己留一些期待。', href: '/wishes/', count: `${wishes.length} 个愿望`, icon: '✳' },
+  { no: '04', title: '日常动态', en: 'MOMENTS', desc: '不必成篇，也值得被记住。', href: '/moments/', count: `${moments.length} 条动态`, icon: '✎' },
+  { no: '05', title: '此时此刻', en: 'RIGHT NOW', desc: '最近正在经历的生活。', href: '/now/', count: '我的近况', icon: '◷' },
+  { no: '06', title: '生活随笔', en: 'JOURNAL', desc: '把日子写成可以翻阅的文字。', href: '/blog/', count: '阅读文章', icon: '≋' },
+];
 ---
-
-<BaseLayout
-  title="生活日常"
-  description="一些散落在日常里的句子，还有一些被黄昏留下来的瞬间。"
->
-  <section class="page-intro container-page">
-    <p class="eyebrow">DAILY LIFE · 日常</p>
-    <div class="page-intro-grid">
-      <h1 class="page-title">把日子<br /><em>慢慢过完</em></h1>
-      <div class="page-intro-side">
-        <p class="page-desc">
-          写一些不成篇的句子，拍一些没有目的的风景。它们不一定有意义，但那一刻，确实很好看。
-        </p>
-        <p class="page-meta">
-          <span>{posts.length} 篇日常</span>
-          <span class="meta-dot"></span>
-          <span>{photos.length} 个瞬间</span>
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <section class="container-page notes-section">
-    <div class="section-head">
-      <div>
-        <p class="eyebrow">MARGINALIA</p>
-        <h2 class="section-title">日常边角</h2>
-      </div>
-      <span class="section-note">一些比文章更轻的东西</span>
-    </div>
-
-    {posts.length > 0 ? (
-      <div class="notes-list">
-        {posts.map((post, index) => (
-          <a class="note-row" href={`/blog/${getPostSlug(post)}/`}>
-            <span class="note-index" aria-hidden="true">0{index + 1}</span>
-            <span class="note-main">
-              <span class="note-title">{post.data.title}</span>
-              <span class="note-desc">{post.data.description}</span>
-            </span>
-            <span class="note-side">
-              <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
-              <span class="note-arrow" aria-hidden="true">↗</span>
-            </span>
-          </a>
-        ))}
-      </div>
-    ) : (
-      <p class="empty-state">日子还在慢慢过，等有想说的话再写下来。</p>
-    )}
-  </section>
-
-  <section class="container-page notes-section">
-    <div class="section-head">
-      <div>
-        <p class="eyebrow">DUSK GALLERY</p>
-        <h2 class="section-title">拾光集</h2>
-      </div>
-      <a class="section-link" href="/gallery/">
-        全部照片
-        <span aria-hidden="true">→</span>
-      </a>
-    </div>
-
-    {photos.length > 0 ? (
-      <div class="gallery-grid">
-        {photos.map((photo, index) => (
-          <figure class:list={['gallery-item', index === 0 && 'photo-tall']}>
-            <img
-              src={photo.src}
-              alt={photo.alt}
-              width="1280"
-              height="720"
-              loading={index > 0 ? 'lazy' : 'eager'}
-              decoding="async"
-            />
-            <figcaption>
-              <span class="gallery-title">{photo.title}</span>
-              <span class="gallery-note">{photo.note}</span>
-            </figcaption>
-          </figure>
-        ))}
-      </div>
-    ) : (
-      <p class="empty-state">相册还是空的，等一场好看的晚霞。</p>
-    )}
-  </section>
-
-  <section class="container-page notes-section">
-    <div class="quote-panel quote-panel-small">
-      <span class="quote-mark" aria-hidden="true">“</span>
-      <p>日子不必每天发光，<br class="hidden sm:block" />只要偶尔被黄昏照亮。</p>
-      <span class="quote-source">— 写在某页手帐边上</span>
-    </div>
-  </section>
+<BaseLayout title="生活档案" description="收藏照片、足迹、愿望和日常的生活档案馆。">
+  <section class="container-page archive-intro"><p class="house-kicker">THE LIFE ARCHIVE / 生活档案馆</p><h1>把寻常日子，<br /><em>收进时光里。</em></h1><div class="archive-intro-bottom"><p>这里收藏生活的不同切面。慢慢翻，总会找到一个值得停留的瞬间。</p><span>COLLECTING LITTLE MOMENTS<br />ONE DAY AT A TIME ↘</span></div></section>
+  <section class="container-page house-section archive-collection"><div class="house-heading"><div><p class="house-kicker">ALL COLLECTIONS</p><h2>打开一格收藏<span>✳</span></h2></div><span>01 — 06</span></div><div class="house-shelves">{entries.map((item) => <a href={item.href} class="house-shelf"><div class="house-shelf-top"><span>{item.no} / {item.en}</span><span>↗</span></div><span class="house-shelf-icon" aria-hidden="true">{item.icon}</span><div><h3>{item.title}</h3><p>{item.desc}</p></div><span class="house-shelf-count">{item.count}</span></a>)}</div></section>
 </BaseLayout>

@@ -1,66 +1,11 @@
 ---
-// 背景视频与兜底图。视频加载失败或自动播放被阻止时才切换为静态图。
+// 进入站点后使用纯纸面背景：不加载背景图 / 视频，只保留暖光与纸纹。
+// defer 参数保留为兼容旧调用，纸面背景不需要延迟启动。
 interface Props {
-  /** 首页开场期间先不启动背景视频，等开场的视频结束后再播放 */
   defer?: boolean;
 }
-
-const { defer = false } = Astro.props;
 ---
-
 <div class="site-background" aria-hidden="true">
-  <video
-    id="site-bg-video"
-    class="site-bg-video"
-    autoplay={!defer}
-    data-defer-play={defer ? 'true' : undefined}
-    muted
-    loop
-    playsinline
-    preload="metadata"
-    poster="/assets/bg-poster.jpg"
-    tabindex="-1"
-    disablepictureinpicture
-  >
-    <source src="/assets/bg.mp4" type="video/mp4" />
-  </video>
-
-  <img
-    class="site-bg-poster"
-    src="/assets/bg-poster.jpg"
-    alt=""
-    width="1280"
-    height="720"
-    decoding="async"
-    fetchpriority="high"
-  />
-
-  <div class="site-bg-scrim"></div>
+  <div class="site-bg-paper"></div>
   <div class="site-bg-grain"></div>
 </div>
-
-<script is:inline>
-  (() => {
-    const root = document.documentElement;
-    const video = document.getElementById('site-bg-video');
-
-    if (!video) return;
-
-    const useStatic = () => root.classList.add('bg-static');
-
-    video.addEventListener('error', useStatic, { once: true });
-
-    // 开场遮罩还在时由 IntroSplash 负责启动，避免 play/pause 竞争触发兜底。
-    if (video.dataset.deferPlay === 'true') return;
-
-    video.play().catch(useStatic);
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        video.pause();
-      } else if (!root.classList.contains('bg-static')) {
-        video.play().catch(useStatic);
-      }
-    });
-  })();
-</script>

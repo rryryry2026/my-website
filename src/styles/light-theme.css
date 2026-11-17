@@ -1,0 +1,821 @@
+/* ==========================================================================
+   晚巷 · 斜阳信笺（浅色主题）· 阶段 0+1
+   在 global.css 之后引入，用同优先级 + 后加载覆盖深色玻璃风格。
+   只改颜色、材质与光感，不动布局与信息结构。
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* 纸与墨 */
+  --paper-0: #f7efe2;
+  --paper-1: #fffbf3;
+  --paper-2: #efe1cc;
+
+  --ink-0: #2e1b12;
+  --ink-1: #5b4333;
+  --ink-2: #8a7160;
+
+  /* 覆盖原主题 token */
+  --text-primary: var(--ink-0);
+  --text-secondary: var(--ink-1);
+  --text-faint: var(--ink-2);
+
+  --line: rgba(90, 62, 43, 0.14);
+  --line-strong: rgba(90, 62, 43, 0.26);
+
+  /* 原文件里 23 处标题色都用这个变量，统一换成墨色 */
+  --color-cream: var(--ink-0);
+  --color-ink: var(--ink-0);
+  --color-wine: #6b4a38;
+  --color-gold: #a8641f;
+
+  --glass-bg: linear-gradient(
+    145deg,
+    rgba(255, 252, 246, 0.96) 0%,
+    rgba(250, 242, 230, 0.92) 100%
+  );
+
+  --shadow-soft: 0 18px 44px -26px rgba(90, 62, 43, 0.3);
+  --shadow-lift: 0 28px 60px -30px rgba(90, 62, 43, 0.34);
+  --sun-light: rgba(255, 210, 150, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+
+html,
+body {
+  background: var(--paper-0);
+  color: var(--ink-1);
+}
+
+body {
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(201, 85, 43, 0.18);
+  color: var(--ink-0);
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(90, 62, 43, 0.06);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(90, 62, 43, 0.22);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(90, 62, 43, 0.34);
+  background-clip: content-box;
+}
+
+.skip-link {
+  background: var(--paper-1);
+  color: var(--ink-0);
+  box-shadow: var(--shadow-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Background：暖雾 + 斜阳，不再压暗
+   -------------------------------------------------------------------------- */
+
+.site-background {
+  background: var(--paper-0);
+}
+
+/* 纯纸面背景：不再使用背景图 / 视频，用两团暖光和纸色渐变保留「斜阳」感 */
+.site-bg-paper {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(70% 55% at 72% 6%, rgba(255, 224, 186, 0.5), transparent 62%),
+    radial-gradient(58% 52% at 16% 84%, rgba(255, 238, 214, 0.55), transparent 68%),
+    linear-gradient(180deg, #fbf4e9 0%, #f7efe2 100%);
+}
+
+.site-bg-paper::after {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(34% 28% at 68% 14%, rgba(255, 205, 158, 0.22), transparent 72%),
+    radial-gradient(26% 22% at 24% 26%, rgba(255, 222, 190, 0.18), transparent 72%);
+  content: '';
+  filter: blur(38px);
+}
+
+.site-bg-video,
+.site-bg-poster {
+  filter: brightness(1.06) saturate(1.04) contrast(0.99);
+}
+
+.site-bg-scrim {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(250, 243, 232, 0.82) 0%,
+      rgba(250, 243, 232, 0.55) 34%,
+      rgba(250, 243, 232, 0.16) 58%,
+      rgba(250, 243, 232, 0.08) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(250, 243, 232, 0.28) 0%,
+      rgba(250, 243, 232, 0.04) 42%,
+      rgba(250, 243, 232, 0.3) 100%
+    );
+}
+
+.site-bg-sun {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(42% 36% at 57% 15%, rgba(255, 212, 150, 0.34), transparent 72%),
+    radial-gradient(18% 20% at 30% 68%, rgba(255, 196, 130, 0.22), transparent 74%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: sun-breathe 14s ease-in-out infinite alternate;
+}
+
+@keyframes sun-breathe {
+  from {
+    opacity: 0.72;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.site-bg-grain {
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-bg-sun {
+    animation: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Shared surfaces
+   -------------------------------------------------------------------------- */
+
+.glass {
+  border-color: var(--line);
+  background: var(--glass-bg);
+  box-shadow:
+    0 26px 70px -30px rgba(90, 62, 43, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(18px) saturate(110%);
+  -webkit-backdrop-filter: blur(18px) saturate(110%);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: rgba(255, 251, 243, 0.94);
+  }
+
+  .site-header {
+    background: rgba(255, 251, 243, 0.94) !important;
+  }
+}
+
+.eyebrow {
+  color: var(--color-gold);
+}
+
+.eyebrow::before {
+  background: linear-gradient(90deg, var(--color-sunset), rgba(201, 85, 43, 0));
+}
+
+.meta-dot {
+  background: rgba(90, 62, 43, 0.32);
+}
+
+.primary-btn {
+  color: #fff8ed;
+}
+
+.text-link {
+  color: var(--ink-1);
+  text-shadow: 0 1px 0 rgba(255, 251, 243, 0.65);
+}
+
+.text-link:hover {
+  color: var(--color-sunset);
+}
+
+/* --------------------------------------------------------------------------
+   Header / navigation
+   -------------------------------------------------------------------------- */
+
+.site-header {
+  border-color: var(--line);
+  background: rgba(255, 251, 243, 0.7);
+  box-shadow:
+    0 18px 50px -26px rgba(90, 62, 43, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.site-header-wrap.is-scrolled .site-header {
+  border-color: var(--line-strong);
+  background: rgba(255, 251, 243, 0.92);
+  box-shadow:
+    0 22px 60px -30px rgba(90, 62, 43, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.brand {
+  color: var(--ink-0);
+}
+
+.brand-mark {
+  border-color: rgba(90, 62, 43, 0.2);
+  background: radial-gradient(
+    circle at 38% 30%,
+    rgba(255, 176, 110, 0.28),
+    rgba(255, 107, 53, 0.06)
+  );
+  color: var(--color-sunset);
+}
+
+.brand:hover .brand-mark {
+  background: radial-gradient(
+    circle at 38% 30%,
+    rgba(255, 166, 96, 0.4),
+    rgba(255, 107, 53, 0.1)
+  );
+  color: var(--color-sunset);
+}
+
+.brand-sub {
+  color: var(--ink-2);
+}
+
+.nav-link {
+  color: var(--ink-1);
+}
+
+.nav-link:hover {
+  background: rgba(201, 85, 43, 0.07);
+  color: var(--ink-0);
+}
+
+.nav-link.is-active {
+  background: linear-gradient(135deg, rgba(201, 85, 43, 0.14), rgba(201, 85, 43, 0.04));
+  color: var(--color-sunset);
+}
+
+.header-mail {
+  color: var(--ink-1);
+}
+
+.header-mail:hover {
+  border-color: rgba(201, 85, 43, 0.34);
+  background: rgba(201, 85, 43, 0.07);
+  color: var(--ink-0);
+}
+
+.menu-toggle {
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink-0);
+}
+
+.mobile-menu {
+  border: 1px solid var(--line);
+  background: rgba(255, 251, 243, 0.97);
+  box-shadow: 0 30px 70px -30px rgba(90, 62, 43, 0.34);
+}
+
+.mobile-nav-link {
+  color: var(--ink-1);
+}
+
+.mobile-nav-link:hover,
+.mobile-nav-link.is-active {
+  background: rgba(201, 85, 43, 0.09);
+  color: var(--ink-0);
+}
+
+/* --------------------------------------------------------------------------
+   Hero
+   -------------------------------------------------------------------------- */
+
+.hero-title {
+  color: var(--ink-0);
+  text-shadow: 0 1px 0 rgba(255, 251, 243, 0.6), 0 10px 40px rgba(255, 251, 243, 0.35);
+}
+
+.hero-title-accent {
+  background: linear-gradient(135deg, #b8411f 0%, #8f2f16 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  /* 关键：不吃父级标题的浅色阴影，否则阴影会透过透明字形把颜色冲淡 */
+  text-shadow: none;
+}
+
+.hero-pretitle {
+  color: var(--color-gold);
+}
+
+.hero-title-en,
+.hero-lead,
+.hero-foot {
+  color: var(--text-faint);
+}
+
+.hero-lead {
+  color: var(--ink-1);
+  text-shadow: 0 1px 0 rgba(255, 251, 243, 0.55);
+}
+
+.hero-intro-text {
+  color: var(--ink-1);
+}
+
+.hero-intro-kicker,
+.hero-intro-meta {
+  color: var(--ink-2);
+}
+
+.hero-seal {
+  border-color: rgba(201, 85, 43, 0.24);
+  background: radial-gradient(
+    circle at 35% 28%,
+    rgba(255, 176, 110, 0.24),
+    rgba(255, 107, 53, 0.05)
+  );
+  color: var(--color-sunset);
+}
+
+.hero-seal::after {
+  border-color: rgba(201, 85, 43, 0.16);
+}
+
+.hero-aside::before {
+  border-color: rgba(201, 85, 43, 0.1);
+  background: radial-gradient(circle, rgba(255, 176, 110, 0.2), transparent 66%);
+}
+
+.hero-postcard {
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 34px 70px -26px rgba(90, 62, 43, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.hero-postcard:hover {
+  box-shadow:
+    0 40px 80px -26px rgba(90, 62, 43, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.hero-scroll span {
+  background: rgba(90, 62, 43, 0.18);
+}
+
+/* --------------------------------------------------------------------------
+   Home sections
+   -------------------------------------------------------------------------- */
+
+.section-title {
+  color: var(--ink-0);
+  text-shadow: 0 1px 0 rgba(255, 251, 243, 0.55);
+}
+
+.section-link {
+  border-color: var(--line);
+  background: rgba(255, 251, 243, 0.72);
+  color: var(--ink-1);
+}
+
+.section-link:hover {
+  border-color: rgba(201, 85, 43, 0.34);
+  background: rgba(255, 251, 243, 0.95);
+  color: var(--ink-0);
+}
+
+.section-note {
+  border-color: var(--line);
+  background: rgba(255, 251, 243, 0.62);
+  color: var(--ink-2);
+}
+
+/* 文章卡片 */
+.post-card {
+  border-color: var(--line);
+  background: linear-gradient(155deg, rgba(255, 252, 246, 0.94), rgba(248, 238, 223, 0.9));
+  box-shadow:
+    0 20px 50px -30px rgba(90, 62, 43, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px) saturate(105%);
+  -webkit-backdrop-filter: blur(12px) saturate(105%);
+}
+
+.post-card::before {
+  background: radial-gradient(circle, rgba(255, 176, 110, 0.16), transparent 68%);
+}
+
+.post-card:hover {
+  border-color: rgba(201, 85, 43, 0.3);
+  background: linear-gradient(155deg, rgba(255, 253, 248, 0.98), rgba(250, 240, 224, 0.95));
+  box-shadow:
+    0 30px 64px -32px rgba(90, 62, 43, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.post-card-index {
+  color: rgba(90, 62, 43, 0.06);
+}
+
+.post-card-title {
+  color: var(--ink-0);
+}
+
+.post-card:hover .post-card-title {
+  color: var(--color-sunset);
+}
+
+.post-card-desc {
+  color: var(--ink-1);
+}
+
+.category-chip {
+  border-color: rgba(201, 85, 43, 0.22);
+  background: rgba(201, 85, 43, 0.08);
+  color: #a8432a;
+}
+
+/* 此刻 / 动态 / 探索卡 */
+.now-card,
+.home-moment,
+.explore-card,
+.friend-card,
+.tag-pill {
+  border-color: var(--line);
+  background: rgba(255, 251, 243, 0.72);
+}
+
+.home-moment:hover,
+.explore-card:hover,
+.friend-card:hover {
+  border-color: var(--line-strong);
+  background: rgba(255, 253, 248, 0.94);
+}
+
+.now-label,
+.explore-card span,
+.friend-desc {
+  color: var(--ink-2);
+}
+
+.now-value,
+.explore-card strong,
+.friend-name,
+.home-moment p {
+  color: var(--ink-0);
+}
+
+.home-moment time {
+  color: var(--color-gold);
+}
+
+/* 引文 */
+.quote-panel {
+  border-color: var(--line);
+  background: rgba(255, 251, 243, 0.42);
+}
+
+.quote-panel::before,
+.quote-panel::after {
+  background: radial-gradient(circle, rgba(255, 176, 110, 0.14), transparent 68%);
+}
+
+.quote-mark {
+  color: rgba(201, 85, 43, 0.4);
+}
+
+.quote-panel p {
+  color: var(--ink-0);
+}
+
+.quote-source {
+  color: var(--ink-2);
+}
+
+/* 照片：图注仍用浅色，因为压在照片的暗部渐变上 */
+.photo-card {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--paper-1);
+  box-shadow: var(--shadow-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Page intro / notes / gallery / archive
+   -------------------------------------------------------------------------- */
+
+.page-title {
+  color: var(--ink-0);
+  text-shadow: 0 1px 0 rgba(255, 251, 243, 0.55);
+}
+
+.page-title em {
+  background: linear-gradient(125deg, #b8411f 0%, #8f2f16 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
+.page-meta {
+  width: fit-content;
+  padding: 0.34rem 0.72rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 251, 243, 0.72);
+  color: var(--ink-1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.page-desc {
+  border-color: var(--line);
+  border-left-color: rgba(201, 85, 43, 0.55);
+  background: rgba(255, 251, 243, 0.82);
+  color: var(--ink-1);
+}
+
+.back-link {
+  border-color: var(--line);
+  background: rgba(255, 251, 243, 0.72);
+  color: var(--ink-1);
+}
+
+.back-link:hover {
+  border-color: var(--line-strong);
+  background: rgba(255, 253, 248, 0.94);
+  color: var(--ink-0);
+}
+
+/* 归档 / 日常 / 相册：整块内容铺成一张信纸，避免文字直接落在亮背景上 */
+.archive-section,
+.notes-section,
+.gallery-page-section {
+  padding: clamp(1.4rem, 4vw, 2.4rem);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: rgba(255, 251, 243, 0.82);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.notes-section,
+.archive-section,
+.gallery-page-section {
+  margin-top: clamp(2rem, 5vw, 3.5rem);
+}
+
+.notes-list {
+  border-color: var(--line);
+  background: rgba(255, 251, 243, 0.82);
+  box-shadow: var(--shadow-soft);
+}
+
+.note-row:hover {
+  background: linear-gradient(90deg, rgba(201, 85, 43, 0.06), transparent 72%);
+}
+
+.note-row:hover .note-title {
+  color: var(--color-sunset);
+}
+
+.note-row:hover .note-arrow {
+  border-color: rgba(201, 85, 43, 0.5);
+  background: rgba(201, 85, 43, 0.1);
+}
+
+/* 相册：标题和说明压在图片暗部上，保持浅色 */
+.gallery-item {
+  background: var(--paper-1);
+}
+
+.about-photo {
+  border-color: rgba(90, 62, 43, 0.2);
+  background: rgba(255, 251, 243, 0.8);
+  box-shadow: 0 34px 75px -30px rgba(90, 62, 43, 0.34);
+}
+
+.about-photo figcaption {
+  color: var(--ink-2);
+}
+
+.archive-entry time {
+  color: var(--ink-2);
+}
+
+.archive-entry a {
+  color: var(--ink-1);
+}
+
+.archive-entry a:hover {
+  color: var(--color-sunset);
+}
+
+/* --------------------------------------------------------------------------
+   Article
+   -------------------------------------------------------------------------- */
+
+.post-panel {
+  border-color: var(--line);
+  background:
+    radial-gradient(90% 55% at 8% 0%, rgba(255, 176, 110, 0.1), transparent 48%),
+    linear-gradient(145deg, rgba(255, 252, 246, 0.97), rgba(250, 241, 229, 0.94));
+  box-shadow:
+    0 36px 90px -40px rgba(90, 62, 43, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px) saturate(105%);
+  -webkit-backdrop-filter: blur(16px) saturate(105%);
+}
+
+.post-title {
+  color: var(--ink-0);
+}
+
+.post-kicker-line {
+  background: linear-gradient(90deg, rgba(201, 85, 43, 0.4), transparent);
+}
+
+.toc-details {
+  background: rgba(90, 62, 43, 0.035);
+}
+
+.post-aside-inner {
+  border-color: var(--line);
+  background: rgba(255, 251, 243, 0.86);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px) saturate(105%);
+  -webkit-backdrop-filter: blur(14px) saturate(105%);
+}
+
+.post-page-link {
+  background: rgba(255, 251, 243, 0.72);
+}
+
+.post-page-link:hover {
+  background: rgba(255, 253, 248, 0.94);
+}
+
+.post-page-link-empty:hover {
+  background: rgba(255, 251, 243, 0.72);
+}
+
+.post-signature-line {
+  background: rgba(201, 85, 43, 0.24);
+}
+
+/* 正文 */
+.prose-warm {
+  color: var(--ink-1);
+}
+
+.prose-warm h2,
+.prose-warm h3,
+.prose-warm h4,
+.prose-warm strong {
+  color: var(--ink-0);
+}
+
+.prose-warm a {
+  color: #b8411f;
+}
+
+.prose-warm a:hover {
+  color: var(--color-sunset);
+}
+
+.prose-warm em {
+  color: var(--ink-1);
+}
+
+.prose-warm blockquote {
+  border-left-color: rgba(201, 85, 43, 0.5);
+  background: rgba(201, 85, 43, 0.06);
+  color: var(--ink-1);
+}
+
+.prose-warm :not(pre) > code {
+  background: rgba(90, 62, 43, 0.08);
+  color: #a8432a;
+}
+
+/* 代码块保留深色，代码本来就需要高对比 */
+.prose-warm pre {
+  background: #2b1a13 !important;
+  color: #f6e6d3;
+}
+
+.prose-warm table th {
+  color: var(--ink-0);
+}
+
+.prose-warm hr {
+  border-top-color: var(--line);
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+
+.site-footer .container-page {
+  border-top-color: var(--line);
+}
+
+.footer-title {
+  color: var(--ink-0);
+}
+
+.footer-line,
+.footer-bottom {
+  color: var(--ink-2);
+}
+
+.footer-mark {
+  color: var(--color-gold);
+}
+
+/* --------------------------------------------------------------------------
+   Search / comments / empty states
+   -------------------------------------------------------------------------- */
+
+.search-modal {
+  border-color: var(--line-strong);
+  background: rgba(255, 251, 243, 0.98);
+  color: var(--ink-1);
+  box-shadow: 0 40px 100px -40px rgba(90, 62, 43, 0.4);
+}
+
+.search-modal::backdrop {
+  background: rgba(60, 38, 24, 0.28);
+}
+
+.search-result-type {
+  color: #a8432a;
+}
+
+.search-result-title mark {
+  color: var(--color-sunset);
+}
+
+.search-result-desc,
+.search-hint,
+.search-empty {
+  color: var(--ink-2);
+}
+
+.comments-panel {
+  border-color: var(--line);
+  background: rgba(255, 251, 243, 0.78);
+}
+
+.comments-empty {
+  background: rgba(255, 251, 243, 0.6);
+  color: var(--ink-2);
+}
+
+.music-tip {
+  background: rgba(255, 251, 243, 0.86);
+  color: var(--ink-1);
+  border: 1px solid var(--line);
+}
+
+.not-found-code {
+  color: rgba(201, 85, 43, 0.4);
+}
+
+.not-found {
+  color: var(--ink-1);
+}
+
+.empty-state {
+  border-color: var(--line);
+  background: rgba(255, 251, 243, 0.72);
+  color: var(--ink-1);
+}
+
+.friend-exchange {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 251, 243, 0.76);
+  color: var(--ink-1);
+}
